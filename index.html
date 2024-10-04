@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC</title>
+    <script src="jquery-3.7.1.min.js"></script>
+    <script src="peerjs.min.js"></script>
+    <script src="socket.io.min.js"></script>
+</head>
+<body>
+    <div id="divChat">
+        <h2>Online User:</h2>
+        <ul id="Users"></ul>
+        <h3 id="peerId">Your peer ID: </h3>
+        <video id="localStream" width="300" controls></video>
+        <br>
+        <br>
+        <video id="remoteStream" width="300" controls></video>
+        <br>
+        <br>
+        <input type="text" id="remoteId" placeholder="Remote ID">
+        <button id="btnCall">Call</button>
+        <br>
+        <br>
+    </div>
+    <div id="divRegister">
+        <input type="text" id="username" placeholder="username">
+        <button id="btnRegister">Register</button>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
