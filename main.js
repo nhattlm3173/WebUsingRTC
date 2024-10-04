@@ -1,4 +1,6 @@
-const socket = io("http://localhost:3000");
+const socket = io(
+  "https://web-using-kd7hhizrl-trng-le-minh-nhts-projects.vercel.app/"
+);
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
