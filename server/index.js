@@ -1,4 +1,4 @@
-const io = require("socket.io")(process.env.PORT, {
+const io = require("socket.io")(process.env.PORT || 3000, {
   cors: {
     origin: "*", // Cho phép tất cả các nguồn (không khuyến khích dùng trong sản xuất)
     methods: ["GET", "POST"], // Các phương thức được phép

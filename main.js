@@ -1,4 +1,4 @@
-const socket = io("https://web-using-rtc-4.vercel.app/");
+const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
