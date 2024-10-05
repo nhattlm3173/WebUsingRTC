@@ -32,7 +32,13 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
     li.textContent = username;
     li.id = peerID;
     li.addEventListener("click", () => {
-      console.log(`Clicked on user: ${username}, peerID: ${peerID}`);
+      OpenStream().then((stream) => {
+        PlayStream("localStream", stream);
+        const call = peer.call(peerID, stream);
+        call.on("stream", (remoteStream) =>
+          PlayStream("remoteStream", remoteStream)
+        );
+      });
     });
     uLUsers.appendChild(li);
   });
