@@ -60,7 +60,17 @@ function PlayStream(idVideoTag, stream) {
   video.play();
 }
 // OpenStream().then((stream) => PlayStream("localStream", stream));
-const peer = new Peer();
+const peer = new Peer(undefined, {
+  config: {
+    iceServers: [
+      {
+        urls: "turn:global.relay.metered.ca:80",
+        username: "bcb1cf6a93292e9799ce9da7",
+        credential: "SCqcdf7LDWvXDVfu",
+      },
+    ],
+  },
+});
 peer.on("open", function (id) {
   document.getElementById("peerId").innerText += id;
   buttonRegister.addEventListener("click", () => {
