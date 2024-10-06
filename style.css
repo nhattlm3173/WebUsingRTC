@@ -1,0 +1,275 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.appName {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.appName img {
+    height: 10%;
+    width: 10%;
+}
+
+#header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75em;
+    box-shadow: 2px 4px 15px rgba(100, 100, 255, 0.5);
+
+
+
+}
+
+
+
+.title {
+    font-family: "Dancing Script", cursive;
+    color: blueviolet;
+    margin-left: 20px;
+}
+
+.type {
+    display: flex;
+    align-items: center;
+    gap: 3em;
+}
+
+.type a {
+    font-size: large;
+    cursor: pointer;
+    font-weight: 700;
+    color: rgb(179, 122, 232);
+}
+
+.type a:hover {
+    color: blueviolet;
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    position: relative;
+}
+
+#searchUser {
+    font-size: medium;
+    padding: 5px 10px;
+    border: 1px solid rgb(201, 167, 234);
+    transition: border-color 0.2s;
+    border-radius: 0.75em;
+    color: rgb(177, 109, 240);
+}
+
+#searchUser:focus {
+    border-color: blueviolet;
+    outline: none;
+}
+
+#searchUser::placeholder {
+    color: rgb(198, 156, 237);
+    opacity: 1;
+}
+
+.profile #Users {
+    display: none;
+    background-color: rgb(238, 220, 255);
+    padding: 5px 10px;
+    position: absolute;
+    left: 0;
+    top: 2.8em;
+    list-style-type: none;
+    border-radius: 0.75em;
+}
+
+.profile #Users li {
+    color: blueviolet;
+    cursor: pointer;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#usernameProfile {
+    margin-right: 20px;
+    font-size: x-large;
+    font-family: "Pacifico", cursive;
+    color: blueviolet;
+}
+
+#divChat {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.videoCall {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+    position: relative;
+}
+
+#remoteStream {
+    width: 100%;
+    z-index: 0;
+    border-radius: 0.75em;
+    overflow: hidden;
+    box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+#localStream {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 25%;
+    box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.3);
+    border-radius: 0.75em;
+
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#divRegister {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url(images/background.jpg);
+    background-size: cover;
+}
+
+.formRegister {
+    width: 40%;
+    height: 50%;
+    padding: 10px;
+    margin: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    background-color: rgba(250, 235, 215, 0.3);
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgb(0 0 0 / 0.2);
+}
+
+.formRegister input {
+    width: 90%;
+    height: 10%;
+    border-radius: 10px;
+    border-color: aliceblue;
+    box-shadow: 8px 5px 5px #3d5a80;
+    transition: all 0.4s;
+    padding-left: 20px;
+}
+
+.formRegister input:focus-visible {
+    border-color: aliceblue;
+    outline: none;
+    box-shadow: none;
+}
+
+.textFormRegister {
+    font-family: 'Poppins', sans-serif;
+    /* Thay thế font chữ mượt và hiện đại */
+    font-size: 28px;
+    /* Tăng kích thước chữ để làm nổi bật */
+    font-weight: 600;
+    /* Độ dày vừa phải, không quá nặng */
+    color: #ffffff;
+    /* Màu trắng để nổi bật trên nền gradient xanh */
+    text-align: center;
+    /* Căn giữa dòng chữ */
+    margin-bottom: 20px;
+    /* Tạo khoảng cách hợp lý giữa tiêu đề và ô input */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    /* Hiệu ứng đổ bóng nhẹ để tạo chiều sâu */
+}
+
+@media (max-width: 1250px) {
+    .formRegister {
+        width: 50%;
+    }
+}
+
+@media (max-width: 30em) {
+    .textFormRegister {
+        font-size: 20px;
+        /* Giảm kích thước chữ khi màn hình nhỏ hơn */
+    }
+}
+
+.button-48 {
+    appearance: none;
+    background-color: #FFFFFF;
+    border-width: 0;
+    box-sizing: border-box;
+    color: #000000;
+    cursor: pointer;
+    display: inline-block;
+    font-family: Clarkson, Helvetica, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1em;
+    margin: 0;
+    opacity: 1;
+    outline: 0;
+    padding: 1.5em 2.2em;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    text-rendering: geometricprecision;
+    text-transform: uppercase;
+    transition: opacity 300ms cubic-bezier(.694, 0, 0.335, 1), background-color 100ms cubic-bezier(.694, 0, 0.335, 1), color 100ms cubic-bezier(.694, 0, 0.335, 1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    vertical-align: baseline;
+    white-space: nowrap;
+    border-radius: 10px;
+}
+
+.button-48:before {
+    animation: opacityFallbackOut .5s step-end forwards;
+    backface-visibility: hidden;
+    background-color: #EBEBEB;
+    clip-path: polygon(-1% 0, 0 0, -25% 100%, -1% 100%);
+    content: "";
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transform: translateZ(0);
+    transition: clip-path .5s cubic-bezier(.165, 0.84, 0.44, 1), -webkit-clip-path .5s cubic-bezier(.165, 0.84, 0.44, 1);
+    width: 100%;
+    border-radius: 10px;
+}
+
+.button-48:hover:before {
+    animation: opacityFallbackIn 0s step-start forwards;
+    clip-path: polygon(0 0, 101% 0, 101% 101%, 0 101%);
+    border-radius: 10px;
+}
+
+.button-48:after {
+    background-color: #FFFFFF;
+}
+
+.button-48 span {
+    z-index: 1;
+    position: relative;
+}
