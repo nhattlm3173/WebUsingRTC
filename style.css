@@ -195,7 +195,10 @@ body {
     /* Căn giữa dòng chữ */
     margin-bottom: 20px;
     /* Tạo khoảng cách hợp lý giữa tiêu đề và ô input */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 0 10px cyan,
+                 0 0 20px cyan,
+                 0 0 30px cyan,
+                 0 0 40px cyan;
     /* Hiệu ứng đổ bóng nhẹ để tạo chiều sâu */
 }
 
