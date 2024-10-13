@@ -28,8 +28,8 @@
             <h1 class="title">WebRTC</h1>
         </div>
         <div class="type">
-            <a>Video Call</a>
-            <a>Stream</a>
+            <a id="VideoCallPage">Video Call</a>
+            <a id="StreamPage">Stream</a>
         </div>
         <div class="profile">
             <input type="text" id="searchUser" placeholder="Search">
@@ -53,6 +53,13 @@
             <input type="text" id="username" placeholder="username">
             <button class="button-48" id="btnRegister"><span class="text">Register</span></button>
         </div>
+    </div>
+    <div id="StreamDiv">
+        <button id="onStream">Stream</button>
+        <video id="liveStream" controls></video>
+        <ul id="ulVideo">
+            
+        </ul>
     </div>
     <script src="main.js"></script>
 </body>
