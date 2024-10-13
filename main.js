@@ -1,5 +1,5 @@
-// const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-const socket = io("http://localhost:3000");
+const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
+// const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
