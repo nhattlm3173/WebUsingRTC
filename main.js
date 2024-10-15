@@ -46,9 +46,10 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
       mediaStream = stream;
       call.answer(stream);
       PlayStream("localStream", stream);
-      call.on("stream", (remoteStream) =>
-        PlayStream("remoteStream", remoteStream)
-      );
+      call.on("stream", (remoteStream) => {
+        console.log(remoteStream);
+        return PlayStream("remoteStream", remoteStream);
+      });
     });
   };
   peer.on("call", callHandler);
