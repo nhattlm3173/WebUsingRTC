@@ -25,7 +25,7 @@ let mediaStream;
 // let watchStreamUsers = [];
 let userID;
 let currentStreamer;
-let callHandler;
+let callHandler = null;
 let currentCall;
 let toggleStreamPage = false;
 header.style.display = "none";
