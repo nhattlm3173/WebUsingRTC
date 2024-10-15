@@ -109,7 +109,9 @@ function OpenStream() {
 function PlayStream(idVideoTag, stream) {
   const video = document.getElementById(idVideoTag);
   video.srcObject = stream;
-  video.play();
+  setTimeout(() => {
+    video.play();
+  }, 1500);
 }
 function stopStreaming() {
   // Tắt sự kiện khi streamer chuyển trang
