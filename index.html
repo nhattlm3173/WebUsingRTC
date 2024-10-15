@@ -29,7 +29,12 @@
         </div>
         <div class="type">
             <a id="VideoCallPage">Video Call</a>
-            <a id="StreamPage">Stream</a>
+            <a id="StreamPage">Stream
+                <div id="SelectStreamPage">
+                    <a id="liveStreamPage">Live Stream</a>
+                    <a id="watchStreamPage">Watch Stream</a>
+                </div>
+            </a>
         </div>
         <div class="profile">
             <input type="text" id="searchUser" placeholder="Search">
@@ -46,6 +51,11 @@
         </div>
         <input type="text" style="display: none;" id="remoteId" placeholder="Remote ID">
         <button style="display: none;" id="btnCall">Call</button>
+        <div id="chatContainer">
+            <ul id="chatMessages"></ul>
+            <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
+            <button id="sendMessageButton">Gửi</button>
+        </div>
     </div>
     <div id="divRegister">
         <div class="formRegister">
@@ -54,14 +64,23 @@
             <button class="button-48" id="btnRegister"><span class="text">Register</span></button>
         </div>
     </div>
-    <div id="StreamDiv">
-        <button id="onStream">Stream</button>
-        <video id="liveStream" controls></video>
+    <div id="WatchStreamDiv">
+        <video id="WatchLiveStream" controls></video>
         <ul id="ulVideo">
             
         </ul>
+        <div id="chatCommentsContainer">
+            <ul id="chatMComments"></ul>
+            <input type="text" id="chatCommentsInput" placeholder="Nhập bình luận...">
+            <button id="sendCommentsButton">Gửi</button>
+        </div>
+    </div>
+    <div id="StreamDiv">
+        <button id="onStream">Stream</button>
+        <video id="liveStream" controls></video>
     </div>
     <script src="main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>

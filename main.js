@@ -1,5 +1,5 @@
-const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-// const socket = io("http://localhost:3000");
+// const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
+const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
@@ -14,15 +14,25 @@ const VideoCallPage = document.getElementById("VideoCallPage");
 const StreamDiv = document.getElementById("StreamDiv");
 const onStreamBtn = document.getElementById("onStream");
 const ulVideo = document.getElementById("ulVideo");
+const WatchStreamDiv = document.getElementById("WatchStreamDiv");
+const SelectStreamPage = document.getElementById("SelectStreamPage");
+const WatchLiveStream = document.getElementById("WatchLiveStream");
+const liveStreamPage = document.getElementById("liveStreamPage");
+const watchStreamPage = document.getElementById("watchStreamPage");
 const listUser = [];
+let listCall = [];
+let mediaStream;
 // let watchStreamUsers = [];
 let userID;
 let currentStreamer;
 let callHandler;
 let currentCall;
+let toggleStreamPage = false;
 header.style.display = "none";
 chatDiv.style.display = "none";
 StreamDiv.style.display = "none";
+WatchStreamDiv.style.display = "none";
+SelectStreamPage.style.display = "none";
 socket.on("ONLINE_LIST", (arrUserInfo) => {
   chatDiv.style.display = "flex";
   header.style.display = "flex";
@@ -31,7 +41,9 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
     peer.off("call", callHandler);
   }
   callHandler = (call) => {
+    currentCall = call;
     OpenStream().then((stream) => {
+      mediaStream = stream;
       call.answer(stream);
       PlayStream("localStream", stream);
       call.on("stream", (remoteStream) =>
@@ -41,7 +53,7 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
   };
   peer.on("call", callHandler);
   arrUserInfo.forEach((user) => {
-    const { peerID, username } = user;
+    const { peerID, username, publicKey } = user;
     // const li = document.createElement("li");
     // li.textContent = username;
     // li.id = peerID;
@@ -55,10 +67,10 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
     //   });
     // });
     // uLUsers.appendChild(li);
-    listUser.push({ username: username, id: peerID });
+    listUser.push({ username: username, id: peerID, publicKey: publicKey });
   });
   socket.on("HAVE_NEW_USER", (user) => {
-    const { peerID, username } = user;
+    const { peerID, username, publicKey } = user;
     // const li = document.createElement("li");
     // li.textContent = username;
     // li.id = peerID;
@@ -72,7 +84,7 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
     //   });
     // });
     // uLUsers.appendChild(li);
-    listUser.push({ username: username, id: peerID });
+    listUser.push({ username: username, id: peerID, publicKey: publicKey });
   });
   socket.on("SOMEONE_DISCONNECT", (peerID) => {
     const index = listUser.indexOf((u) => u.id === peerID);
@@ -99,6 +111,26 @@ function PlayStream(idVideoTag, stream) {
   video.srcObject = stream;
   video.play();
 }
+function stopStreaming() {
+  // Tắt sự kiện khi streamer chuyển trang
+  socket.off("NEW_USER_JOIN_LIVESTREAM");
+  socket.off("GET_WATCHSTREAMLIST");
+  // Đóng tất cả các cuộc gọi trong danh sách listCall
+  if (listCall.length > 0) {
+    listCall.forEach((call) => call.close());
+    listCall = [];
+    console.log(listCall);
+  }
+
+  // Dừng tất cả các track của stream để tắt camera/microphone
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((track) => track.stop());
+  }
+
+  // Ẩn hoặc chuyển đến trang mới
+  // StreamDiv.style.display = "none";
+  // chatDiv.style.display = "block";
+}
 // OpenStream().then((stream) => PlayStream("localStream", stream));
 const peer = new Peer(undefined, {
   config: {
@@ -118,7 +150,20 @@ peer.on("open", function (id) {
     const usernameProfile = document.getElementById("usernameProfile");
     usernameProfile.textContent = username;
     userID = id;
-    socket.emit("USER_REGISTER", { peerID: id, username: username });
+    // Tạo cặp khóa RSA khi người dùng đăng ký
+    generateKeyPair().then((keyPair) => {
+      exportKeys(keyPair).then(({ publicKeyString, privateKeyString }) => {
+        // Gửi thông tin đăng ký lên server bao gồm cả khóa công khai
+        socket.emit("USER_REGISTER", {
+          peerID: userID,
+          username: username,
+          publicKey: publicKeyString,
+        });
+
+        // Lưu khóa bí mật trên client
+        localStorage.setItem("privateKey", privateKeyString);
+      });
+    });
   });
 });
 
@@ -132,9 +177,10 @@ buttonCall.addEventListener("click", () => {
     );
   });
 });
+let senderId;
 searchUserInput.addEventListener("input", function () {
   const query = this.value.toLowerCase(); // Lấy giá trị nhập vào và chuyển sang chữ thường
-
+  const username = textUsername.value;
   // Xóa danh sách người dùng trước đó
   uLUsers.innerHTML = "";
 
@@ -142,7 +188,7 @@ searchUserInput.addEventListener("input", function () {
   const filteredUsers = listUser.filter((user) =>
     user.username.toLowerCase().includes(query)
   );
-  console.log(query);
+  // console.log(query);
   // Kiểm tra xem có người dùng nào phù hợp không
   if (filteredUsers.length > 0) {
     uLUsers.style.display = "block";
@@ -151,13 +197,19 @@ searchUserInput.addEventListener("input", function () {
       li.textContent = user.username;
       li.id = user.id;
       li.addEventListener("click", () => {
-        OpenStream().then((stream) => {
-          PlayStream("localStream", stream);
-          const call = peer.call(user.id, stream);
-          call.on("stream", (remoteStream) =>
-            PlayStream("remoteStream", remoteStream)
-          );
+        senderId = user.id;
+        socket.emit("CALL_USER", {
+          callerPeerID: userID,
+          callerName: username,
+          receiverPeerID: user.id,
         });
+        // OpenStream().then((stream) => {
+        //   PlayStream("localStream", stream);
+        //   const call = peer.call(user.id, stream);
+        //   call.on("stream", (remoteStream) =>
+        //     PlayStream("remoteStream", remoteStream)
+        //   );
+        // });
       });
       uLUsers.appendChild(li); // Thêm vào danh sách hiển thị
     });
@@ -168,16 +220,109 @@ searchUserInput.addEventListener("input", function () {
     uLUsers.style.display = "none";
   }
 });
+let receiverId;
+// Lắng nghe sự kiện có cuộc gọi đến từ server
+socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
+  // Bây giờ người nhận đã có được peerID của người gọi
+  const username = textUsername.value;
+  // Sử dụng SweetAlert để hiện thông báo với các tùy chọn
+  Swal.fire({
+    title: `Incoming call from ${callerName}`,
+    text: "Do you want to accept the call?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Accept",
+    cancelButtonText: "Reject",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Người dùng chọn Accept
+      receiverId = callerPeerID;
+      OpenStream().then((stream) => {
+        mediaStream = stream;
+        PlayStream("localStream", stream);
+        const call = peer.call(callerPeerID, stream);
+        currentCall = call;
+        call.on("stream", (remoteStream) =>
+          PlayStream("remoteStream", remoteStream)
+        );
+      });
+    } else {
+      // Người dùng chọn Reject
+      socket.emit("REJECT_CALL", {
+        callerPeerID: callerPeerID,
+        username: username,
+      });
+    }
+  });
+});
+socket.on("CALL_REJECTION_NOTIFICATION", (message) => {
+  Swal.fire({
+    title: "Cuộc gọi bị từ chối",
+    text: message,
+    icon: "warning",
+    confirmButtonText: "OK",
+  });
+});
+VideoCallPage.addEventListener("click", () => {
+  stopStreaming();
+  chatDiv.style.display = "flex";
+  StreamDiv.style.display = "none";
+  WatchStreamDiv.style.display = "none";
+});
 StreamPage.addEventListener("click", () => {
+  if (!toggleStreamPage) {
+    SelectStreamPage.style.display = "flex";
+    toggleStreamPage = !toggleStreamPage;
+  } else {
+    SelectStreamPage.style.display = "none";
+    toggleStreamPage = !toggleStreamPage;
+  }
+});
+liveStreamPage.addEventListener("click", () => {
+  // console.log(mediaStream);
+  if (mediaStream && !currentStreamer) {
+    // console.log(mediaStream);
+    mediaStream.getTracks().forEach((track) => track.stop());
+  }
   chatDiv.style.display = "none";
   StreamDiv.style.display = "block";
+  WatchStreamDiv.style.display = "none";
+  if (currentCall) {
+    currentCall.close(); // Đóng cuộc gọi
+    currentCall = null; // Xóa tham chiếu tới cuộc gọi để có thể gọi lại lần sau
+  }
+});
+watchStreamPage.addEventListener("click", () => {
+  stopStreaming();
+  chatDiv.style.display = "none";
+  StreamDiv.style.display = "none";
+  WatchStreamDiv.style.display = "block";
+  if (currentCall) {
+    currentCall.close(); // Đóng cuộc gọi
+    currentCall = null; // Xóa tham chiếu tới cuộc gọi để có thể gọi lại lần sau
+  }
+  const vElements = document.querySelectorAll("#WatchStreamDiv #ulVideo li");
+  vElements.forEach((item) => item.remove());
   // watchStreamUsers.push(userID);
   socket.emit("USER_VIEW_LIVESTREAM", { peerID: userID });
   if (callHandler) {
     peer.off("call", callHandler);
   }
+  // if (listCall.length > 0) {
+  //   console.log(listCall);
+  //   listCall.forEach((c) => c.close());
+  //   listCall = [];
+  // }
+  // if (currentCall) {
+  //   currentCall.close();
+  //   console.log(currentCall); // Đóng cuộc gọi
+  //   currentCall = null; // Xóa tham chiếu tới cuộc gọi để có thể gọi lại lần sau
+  // }
   callHandler = (call) => {
-    currentCall = call;
+    listCall.push(call);
+    // currentCall = call;
+    // console.log(call);
+    // console.log(currentCall);
     // console.log("emoeos");
     // OpenStream().then((stream) => {
     call.answer();
@@ -199,10 +344,10 @@ StreamPage.addEventListener("click", () => {
       video.play();
       setTimeout(() => {
         video.pause();
-      }, 1000);
+      }, 1500);
       video.addEventListener("click", () => {
         // PlayStream("liveStream", video);
-        const liveStreamVideo = document.getElementById("liveStream");
+        const liveStreamVideo = document.getElementById("WatchLiveStream");
 
         // Kiểm tra nếu thẻ liveStreamVideo tồn tại
         if (liveStreamVideo) {
@@ -211,7 +356,7 @@ StreamPage.addEventListener("click", () => {
           liveStreamVideo.play();
           li.style.display = "none";
           const videoElements = document.querySelectorAll(
-            "#StreamDiv #ulVideo li"
+            "#WatchStreamDiv #ulVideo li"
           );
           console.log(videoElements);
           videoElements.forEach((item) => {
@@ -252,27 +397,32 @@ onStreamBtn.addEventListener("click", () => {
   });
   OpenStream().then((stream) => {
     PlayStream("liveStream", stream);
+    mediaStream = stream;
     // console.log(listUser);
     // console.log(listUser.filter((user) => user.id !== userID));
     // Gửi thông tin rằng user này đang livestream
     currentStreamer = userID;
     socket.emit("USER_START_LIVESTREAM", { peerID: userID });
     socket.on("GET_WATCHSTREAMLIST", (arrWatchStream) => {
-      for (let i = 0; i < arrWatchStream.length; i++) {
+      for (let i = 0; i < arrWatchStream.length; i = i + 1) {
         // console.log(arrWatchStream[i].peerID);
         if (arrWatchStream[i].peerID !== userID) {
           const call = peer.call(arrWatchStream[i].peerID, stream);
+          // console.log(listCall);
+          listCall.push(call);
           call.on("stream", () => {
             console.log(arrWatchStream[i].peerID);
           });
         }
       }
-      console.log(arrWatchStream);
+      // console.log(arrWatchStream);
     });
     // watchStreamUsers
 
     socket.on("NEW_USER_JOIN_LIVESTREAM", (id) => {
       const call = peer.call(id, stream);
+      listCall.push(call);
+      console.log(listCall);
       call.on("stream", () => {
         console.log(id);
       });
@@ -285,4 +435,184 @@ onStreamBtn.addEventListener("click", () => {
 });
 socket.on("SOMEONE_LIVESTREAMING", (id) => {
   currentStreamer = id;
+});
+//Chating
+const chatInput = document.getElementById("chatInput");
+const chatMessages = document.getElementById("chatMessages");
+const sendMessageButton = document.getElementById("sendMessageButton");
+
+sendMessageButton.addEventListener("click", async () => {
+  const message = chatInput.value;
+  const username = textUsername.value;
+  console.log(username);
+  // Kiểm tra xem người gửi và người nhận có hợp lệ không
+  if (!message) {
+    alert("Vui lòng nhập tin nhắn!");
+    return;
+  }
+  const receiver = listUser.find((user) => user.id === receiverId);
+  const sender = listUser.find((user) => user.id === senderId);
+  if (receiver) {
+    const publicKeyReceiver = await crypto.subtle.importKey(
+      "spki",
+      Uint8Array.from(atob(receiver.publicKey), (c) => c.charCodeAt(0)),
+      { name: "RSA-OAEP", hash: "SHA-256" },
+      true,
+      ["encrypt"]
+    );
+    const li = document.createElement("li");
+    li.textContent = `${username}: ${message}`;
+    chatMessages.appendChild(li);
+    const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
+    console.log("Encrypted message:", encryptedMessage);
+
+    socket.emit("NEW_CHAT_MESSAGE", { userID, message: encryptedMessage });
+    chatInput.value = "";
+  } else if (sender) {
+    const publicKeyReceiver = await crypto.subtle.importKey(
+      "spki",
+      Uint8Array.from(atob(sender.publicKey), (c) => c.charCodeAt(0)),
+      { name: "RSA-OAEP", hash: "SHA-256" },
+      true,
+      ["encrypt"]
+    );
+    const li = document.createElement("li");
+    li.textContent = `${username}: ${message}`;
+    chatMessages.appendChild(li);
+    const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
+    socket.emit("NEW_CHAT_MESSAGE", { userID, message: encryptedMessage });
+    chatInput.value = "";
+  } else {
+    alert("Không tìm thấy người nhận!");
+  }
+});
+
+socket.on("RECEIVE_CHAT_MESSAGE", async (data) => {
+  const { username, message } = data;
+
+  // Lấy khóa bí mật từ localStorage
+  const privateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    Uint8Array.from(atob(localStorage.getItem("privateKey")), (c) =>
+      c.charCodeAt(0)
+    ),
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    true,
+    ["decrypt"]
+  );
+
+  // Giải mã tin nhắn
+  const decryptedMessage = await decryptMessage(privateKey, message);
+
+  // Kiểm tra xem tin nhắn đã được giải mã thành công hay không
+  if (decryptedMessage === null) {
+    console.error("Failed to decrypt message:", message);
+    return; // Nếu không giải mã được thì thoát khỏi hàm
+  }
+
+  // console.log("Decrypted message:", decryptedMessage);
+
+  // Hiển thị tin nhắn đã giải mã
+  const li = document.createElement("li");
+  li.textContent = `${username}: ${decryptedMessage}`;
+  chatMessages.appendChild(li);
+});
+// Hàm mã hóa tin nhắn bằng khóa công khai
+async function encryptMessage(publicKey, message) {
+  const encodedMessage = new TextEncoder().encode(message);
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: "RSA-OAEP" },
+    publicKey,
+    encodedMessage
+  );
+
+  return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+}
+
+async function decryptMessage(privateKey, encryptedMessage) {
+  try {
+    const encryptedData = Uint8Array.from(atob(encryptedMessage), (c) =>
+      c.charCodeAt(0)
+    ); // Giải mã từ Base64
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "RSA-OAEP" },
+      privateKey,
+      encryptedData
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (error) {
+    console.error("Error during decryption:", error.message); // In ra thông điệp lỗi chi tiết
+    return null; // Trả về null nếu có lỗi
+  }
+}
+
+async function generateKeyPair() {
+  try {
+    const keyPair = await window.crypto.subtle.generateKey(
+      {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["encrypt", "decrypt"]
+    );
+
+    return keyPair;
+  } catch (error) {
+    console.error("Error generating key pair:", error);
+  }
+}
+
+async function exportKeys(keyPair) {
+  try {
+    const publicKey = await window.crypto.subtle.exportKey(
+      "spki",
+      keyPair.publicKey
+    );
+    const privateKey = await window.crypto.subtle.exportKey(
+      "pkcs8",
+      keyPair.privateKey
+    );
+
+    const publicKeyString = btoa(
+      String.fromCharCode(...new Uint8Array(publicKey))
+    );
+    const privateKeyString = btoa(
+      String.fromCharCode(...new Uint8Array(privateKey))
+    );
+
+    return { publicKeyString, privateKeyString };
+  } catch (error) {
+    console.error("Error exporting keys:", error);
+  }
+}
+// COMMENT
+const chatCommentsInput = document.getElementById("chatCommentsInput");
+const chatMComments = document.getElementById("chatMComments");
+const sendCommentsButton = document.getElementById("sendCommentsButton");
+// Nhận lịch sử chat khi kết nối tới server
+socket.on("CHAT_COMMENT_HISTORY", (history) => {
+  history.forEach((message) => {
+    const li = document.createElement("li");
+    li.textContent = `${message.username}: ${message.message}`;
+    chatMComments.appendChild(li); // Hiển thị tin nhắn cũ
+  });
+});
+sendCommentsButton.addEventListener("click", () => {
+  const message = chatCommentsInput.value;
+  const username = textUsername.value;
+  if (!message) {
+    alert("Vui lòng nhập tin nhắn!");
+    return;
+  }
+  socket.emit("NEW_CHAT_COMMENT", { userID, message });
+  chatCommentsInput.value = "";
+});
+socket.on("RECEIVE_CHAT_COMMENT", (data) => {
+  const { username, message } = data;
+  const li = document.createElement("li");
+  li.textContent = `${username}: ${message}`;
+  chatMComments.appendChild(li);
 });
