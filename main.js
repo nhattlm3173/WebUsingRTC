@@ -34,6 +34,7 @@ StreamDiv.style.display = "none";
 WatchStreamDiv.style.display = "none";
 SelectStreamPage.style.display = "none";
 socket.on("ONLINE_LIST", (arrUserInfo) => {
+  console.log(callHandler);
   chatDiv.style.display = "flex";
   header.style.display = "flex";
   RegisterDiv.style.display = "none";
