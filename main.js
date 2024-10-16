@@ -54,6 +54,7 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
     });
   };
   peer.on("call", callHandler);
+  console.log(callHandler);
   arrUserInfo.forEach((user) => {
     const { peerID, username, publicKey } = user;
     // const li = document.createElement("li");
@@ -140,7 +141,7 @@ const peer = new Peer(undefined, {
   config: {
     iceServers: [
       {
-        urls: "turn:global.relay.metered.ca:80",
+        urls: "turn:standard.relay.metered.ca:80",
         username: "bcb1cf6a93292e9799ce9da7",
         credential: "SCqcdf7LDWvXDVfu",
       },
