@@ -53,8 +53,10 @@
         <button style="display: none;" id="btnCall">Call</button>
         <div id="chatContainer">
             <ul id="chatMessages"></ul>
-            <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
-            <button id="sendMessageButton">Gửi</button>
+            <div id="inputDiv">
+                <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
+                <button id="sendMessageButton">Send</button>
+            </div>
         </div>
     </div>
     <div id="divRegister">
@@ -65,15 +67,19 @@
         </div>
     </div>
     <div id="WatchStreamDiv">
-        <video id="WatchLiveStream" controls></video>
-        <ul id="ulVideo">
-            
-        </ul>
-        <div id="chatCommentsContainer">
-            <ul id="chatMComments"></ul>
-            <input type="text" id="chatCommentsInput" placeholder="Nhập bình luận...">
-            <button id="sendCommentsButton">Gửi</button>
+        <div id="streamCmt">
+            <video id="WatchLiveStream" controls></video>
+            <div id="chatCommentsContainer">
+                <ul id="chatMComments"></ul>
+                <div id="inputCmtDiv">
+                    <input type="text" id="chatCommentsInput" placeholder="Nhập bình luận...">
+                    <button id="sendCommentsButton">Comment</button>
+                </div>
+            </div>
         </div>
+        <ul id="ulVideo">
+
+        </ul>
     </div>
     <div id="StreamDiv">
         <button id="onStream">Stream</button>
