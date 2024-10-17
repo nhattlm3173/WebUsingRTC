@@ -19,6 +19,10 @@ const SelectStreamPage = document.getElementById("SelectStreamPage");
 const WatchLiveStream = document.getElementById("WatchLiveStream");
 const liveStreamPage = document.getElementById("liveStreamPage");
 const watchStreamPage = document.getElementById("watchStreamPage");
+const chatCommentsContainer = document.getElementById("chatCommentsContainer");
+const chatCommentsInput = document.getElementById("chatCommentsInput");
+const chatMComments = document.getElementById("chatMComments");
+const sendCommentsButton = document.getElementById("sendCommentsButton");
 const listUser = [];
 let listCall = [];
 let mediaStream;
@@ -297,6 +301,7 @@ liveStreamPage.addEventListener("click", () => {
     currentCall = null; // Xóa tham chiếu tới cuộc gọi để có thể gọi lại lần sau
   }
 });
+let currentStreamerId = null;
 watchStreamPage.addEventListener("click", () => {
   stopStreaming();
   chatDiv.style.display = "none";
@@ -355,8 +360,14 @@ watchStreamPage.addEventListener("click", () => {
       video.addEventListener("click", () => {
         // PlayStream("liveStream", video);
         const liveStreamVideo = document.getElementById("WatchLiveStream");
-        console.log(streamerID);
-        // Kiểm tra nếu thẻ liveStreamVideo tồn tại
+        chatCommentsContainer.style.display = 'block';
+        // Nếu người dùng đã ở trong room của streamer khác, rời khỏi room đó
+        if (currentStreamerId !== call.peer) {
+          chatMComments.innerHTML = "";
+          currentStreamerId = call.peer;
+          socket.emit("CREATE_CHAT_COMMENT_ROOM", call.peer);
+          // socket.emit("CHAT_COMMENT_HISTORY", call.peer);
+        }
         if (liveStreamVideo) {
           // Gán stream của thẻ video được click vào thẻ liveStreamVideo
           liveStreamVideo.srcObject = video.srcObject;
@@ -444,7 +455,14 @@ socket.on("SOMEONE_LIVESTREAMING", ({ streamer }) => {
   // console.log(streamer);
   currentStreamer = streamer;
 });
-//Chating
+
+
+
+
+
+
+
+// ----------------------------Chating---------------------------------------
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const sendMessageButton = document.getElementById("sendMessageButton");
@@ -469,7 +487,11 @@ sendMessageButton.addEventListener("click", async () => {
       ["encrypt"]
     );
     const li = document.createElement("li");
-    li.textContent = `${username}: ${message}`;
+    const p = document.createElement("p");
+    p.id = "sendP";
+    li.id = "sendLi";
+    p.textContent = `${message}`;
+    li.appendChild(p);
     chatMessages.appendChild(li);
     const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
     console.log("Encrypted message:", encryptedMessage);
@@ -485,7 +507,11 @@ sendMessageButton.addEventListener("click", async () => {
       ["encrypt"]
     );
     const li = document.createElement("li");
-    li.textContent = `${username}: ${message}`;
+    const p = document.createElement("p");
+    p.id = "sendP";
+    li.id = "sendLi";
+    p.textContent = `${message}`;
+    li.appendChild(p);
     chatMessages.appendChild(li);
     const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
     socket.emit("NEW_CHAT_MESSAGE", { userID, message: encryptedMessage });
@@ -522,7 +548,11 @@ socket.on("RECEIVE_CHAT_MESSAGE", async (data) => {
 
   // Hiển thị tin nhắn đã giải mã
   const li = document.createElement("li");
-  li.textContent = `${username}: ${decryptedMessage}`;
+  const p = document.createElement("p");
+  p.id = "recieveP";
+  li.id = "recieveLi";
+  p.textContent = `${username}: ${decryptedMessage}`;
+  li.appendChild(p);
   chatMessages.appendChild(li);
 });
 // Hàm mã hóa tin nhắn bằng khóa công khai
@@ -596,31 +626,58 @@ async function exportKeys(keyPair) {
     console.error("Error exporting keys:", error);
   }
 }
-// COMMENT
-const chatCommentsInput = document.getElementById("chatCommentsInput");
-const chatMComments = document.getElementById("chatMComments");
-const sendCommentsButton = document.getElementById("sendCommentsButton");
-// Nhận lịch sử chat khi kết nối tới server
-socket.on("CHAT_COMMENT_HISTORY", (history) => {
+// ----------------------------COMMENT---------------------------------------
+
+
+socket.on("RECEIVE_CHAT_COMMENT_HISTORY", (history) => {
+  // Xóa các comment cũ nếu cần
+  chatMComments.innerHTML = ""; // Hoặc giữ lại comment cũ
+
   history.forEach((message) => {
+    console.log(message);
     const li = document.createElement("li");
-    li.textContent = `${message.username}: ${message.message}`;
-    chatMComments.appendChild(li); // Hiển thị tin nhắn cũ
+
+    // Tạo các thẻ p
+    const p1 = document.createElement("p");
+    p1.id = "p1"; // Nếu cần có thể thêm class thay vì id
+    p1.textContent = `${message.username}: `; // Hiển thị tên người dùng
+
+    const p2 = document.createElement("p");
+    p2.textContent = message.message; // Hiển thị nội dung comment
+
+    // Thêm các thẻ p vào li
+    li.appendChild(p1);
+    li.appendChild(p2);
+
+    // Thêm li vào danh sách comment
+    chatMComments.appendChild(li);
   });
 });
+
+// Nhận lịch sử chat khi kết nối tới server
+
 sendCommentsButton.addEventListener("click", () => {
   const message = chatCommentsInput.value;
-  const username = textUsername.value;
+  const streamerID = currentStreamerId;
   if (!message) {
     alert("Vui lòng nhập tin nhắn!");
     return;
   }
-  socket.emit("NEW_CHAT_COMMENT", { userID, message });
+  socket.emit("NEW_CHAT_COMMENT", { userID, message, streamerID });
   chatCommentsInput.value = "";
 });
 socket.on("RECEIVE_CHAT_COMMENT", (data) => {
-  const { username, message } = data;
+  const { streamerID, username, message } = data;
+  if (streamerID !== currentStreamerId) {
+    return;
+  }
   const li = document.createElement("li");
-  li.textContent = `${username}: ${message}`;
+  const p1 = document.createElement("p");
+  p1.id = "p1";
+  const p2 = document.createElement("p");
+  p1.textContent = `${username}: `;
+  p2.textContent = `${message}`;
+  li.appendChild(p1);
+  li.appendChild(p2);
   chatMComments.appendChild(li);
 });

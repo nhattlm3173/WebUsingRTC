@@ -196,9 +196,9 @@ body {
     margin-bottom: 20px;
     /* Tạo khoảng cách hợp lý giữa tiêu đề và ô input */
     text-shadow: 0 0 10px cyan,
-                 0 0 20px cyan,
-                 0 0 30px cyan,
-                 0 0 40px cyan;
+        0 0 20px cyan,
+        0 0 30px cyan,
+        0 0 40px cyan;
     /* Hiệu ứng đổ bóng nhẹ để tạo chiều sâu */
 }
 
@@ -265,10 +265,11 @@ body {
     z-index: 1;
     position: relative;
 }
-#SelectStreamPage{
+
+#SelectStreamPage {
     display: flex;
     position: absolute;
-    top:9%;
+    top: 9%;
     left: 56.4%;
     flex-wrap: wrap;
     background-color: rgba(97, 206, 246, 0.488);
@@ -277,25 +278,259 @@ body {
     border-radius: 10px;
     width: 10%;
 }
-#liveStreamPage{
+
+#liveStreamPage {
     width: 100%;
     /* border-top: solid 1px black;s */
     /* border-bottom: solid 0.5px black; */
 }
+
 @media (max-width: 1250px) {
     .formRegister {
         width: 50%;
     }
 }
+
 @media (max-width: 1100px) {
-    #SelectStreamPage{
+    #SelectStreamPage {
         width: 30%;
     }
 }
+
 @media (max-width: 30em) {
     .textFormRegister {
         font-size: 20px;
         /* Giảm kích thước chữ khi màn hình nhỏ hơn */
     }
-    
+
+}
+
+
+#chatContainer {
+
+    margin-left: 0.75em;
+}
+
+#chatMessages {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    list-style-type: none;
+    height: 100%;
+    max-height: 200px;
+    overflow-y: scroll;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 0.25em;
+}
+
+#chatMessages #sendLi {
+    display: flex;
+    justify-content: flex-end;
+    height: auto;
+}
+
+#chatMessages #sendLi p {
+    padding: 5px 10px;
+    border-radius: 0.5em;
+    background-color: rgb(175, 111, 239);
+    border: none;
+    color: white;
+    font-size: medium;
+    width: auto;
+    margin: 0;
+    max-width: 200px;
+    /* Đảm bảo nội dung tự xuống dòng khi quá dài */
+    word-wrap: break-word;
+    /* Ngắt từ khi không đủ chỗ */
+    word-break: break-word;
+    /* Ngắt từ theo ký tự khi cần */
+    white-space: normal;
+    /* Cho phép ngắt dòng theo cách thông thường */
+}
+
+#chatMessages #recieveLi {
+    display: flex;
+    justify-content: flex-start;
+    height: auto;
+}
+
+#chatMessages #recieveLi p {
+    padding: 5px 10px;
+    border-radius: 0.5em;
+    background-color: rgb(153, 151, 155);
+    border: none;
+    color: white;
+    font-size: medium;
+    width: auto;
+    margin: 0;
+    max-width: 200px;
+    /* Đảm bảo nội dung tự xuống dòng khi quá dài */
+    word-wrap: break-word;
+    /* Ngắt từ khi không đủ chỗ */
+    word-break: break-word;
+    /* Ngắt từ theo ký tự khi cần */
+    white-space: normal;
+    /* Cho phép ngắt dòng theo cách thông thường */
+}
+
+
+#inputDiv {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.25em;
+}
+
+#chatInput {
+    width: 80%;
+    padding: 5px;
+    border-radius: 0.5em;
+    border: 1px solid rgb(201, 167, 234);
+    transition: border-color 0.2s;
+    color: rgb(177, 109, 240);
+}
+
+#chatInput:focus {
+    border-color: blueviolet;
+    outline: none;
+}
+
+#chatInput::placeholder {
+    color: rgb(198, 156, 237);
+    opacity: 1;
+}
+
+#sendMessageButton {
+    padding: 5px 10px;
+    border-radius: 0.5em;
+    background-color: rgb(226, 201, 251);
+    border: none;
+    color: black;
+    font-size: medium;
+}
+
+#sendMessageButton:hover {
+    background-color: blueviolet;
+    color: white;
+}
+
+
+
+
+
+
+
+#streamCmt {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+    margin-top: 1em;
+    margin-left: 1em;
+    gap: 0.75em;
+}
+
+@media (max-width: 1100px) {
+    #streamCmt {
+        flex-direction: column;
+    }
+}
+
+#streamCmt #WatchLiveStream {
+    width: 50%;
+    border-radius: 0.75em;
+}
+
+
+#chatCommentsContainer {
+    display: none;
+    width: 50%;
+    height: 100%;
+}
+
+#chatMComments {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    list-style-type: none;
+    max-height: 450px;
+    overflow-y: scroll;
+    height: 100% !important;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 0.25em;
+    width: 100%;
+    color: rgb(177, 109, 240);
+    /* font-size: larger; */
+}
+
+#chatMComments li {
+    display: flex;
+    gap: 0.25em;
+    list-style-type: none;
+    margin-bottom: 0.25em;
+    width: 100%;
+    justify-content: flex-start;
+    align-items: center;
+    /* Đảm bảo nội dung tự xuống dòng khi quá dài */
+    word-wrap: break-word;
+    /* Ngắt từ khi không đủ chỗ */
+    word-break: break-word;
+    /* Ngắt từ theo ký tự khi cần */
+    white-space: normal;
+    /* Cho phép ngắt dòng theo cách thông thường */
+}
+
+#chatMComments #p1 {
+    font-weight: 700;
+    color: blueviolet;
+    margin: 0;
+    font-size: larger;
+}
+
+#chatMComments p {
+    color: rgb(199, 150, 245);
+    margin: 0;
+    font-size: larger;
+}
+
+#inputCmtDiv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.25em;
+}
+
+#chatCommentsInput {
+    width: 90%;
+    padding: 5px;
+    border-radius: 0.5em;
+    border: 1px solid rgb(201, 167, 234);
+    transition: border-color 0.2s;
+    color: rgb(177, 109, 240);
+    font-size: medium;
+}
+
+#chatCommentsInput:focus {
+    border-color: blueviolet;
+    outline: none;
+}
+
+#chatCommentsInput::placeholder {
+    color: rgb(198, 156, 237);
+    opacity: 1;
+}
+
+#sendCommentsButton {
+    padding: 5px 20px;
+    border-radius: 0.5em;
+    background-color: rgb(226, 201, 251);
+    border: none;
+    color: black;
+    font-size: medium;
+}
+
+#sendCommentsButton:hover {
+    background-color: blueviolet;
+    color: white;
 }
