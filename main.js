@@ -1,5 +1,5 @@
-const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-// const socket = io("http://localhost:3000");
+// const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
+const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
@@ -324,12 +324,14 @@ watchStreamPage.addEventListener("click", () => {
   //   currentCall = null; // Xóa tham chiếu tới cuộc gọi để có thể gọi lại lần sau
   // }
   callHandler = (call) => {
+    const streamerID = currentStreamer;
     listCall.push(call);
     // currentCall = call;
     // console.log(call);
     // console.log(currentCall);
     // console.log("emoeos");
     // OpenStream().then((stream) => {
+
     call.answer();
     // PlayStream("localStream", stream);
     call.on("stream", (remoteStream) => {
@@ -353,7 +355,7 @@ watchStreamPage.addEventListener("click", () => {
       video.addEventListener("click", () => {
         // PlayStream("liveStream", video);
         const liveStreamVideo = document.getElementById("WatchLiveStream");
-
+        console.log(streamerID);
         // Kiểm tra nếu thẻ liveStreamVideo tồn tại
         if (liveStreamVideo) {
           // Gán stream của thẻ video được click vào thẻ liveStreamVideo
@@ -438,8 +440,9 @@ onStreamBtn.addEventListener("click", () => {
     // );
   });
 });
-socket.on("SOMEONE_LIVESTREAMING", (id) => {
-  currentStreamer = id;
+socket.on("SOMEONE_LIVESTREAMING", ({ streamer }) => {
+  // console.log(streamer);
+  currentStreamer = streamer;
 });
 //Chating
 const chatInput = document.getElementById("chatInput");
