@@ -25,6 +25,7 @@ const chatMComments = document.getElementById("chatMComments");
 const sendCommentsButton = document.getElementById("sendCommentsButton");
 const stopCallingButton = document.getElementById("stopCalling");
 const stopstopStreaming = document.getElementById("stopLiveStream");
+const shareScreenButton = document.getElementById("shareScreen");
 const listUser = [];
 let listCall = [];
 let mediaStream;
@@ -34,6 +35,8 @@ let currentStreamer;
 let callHandler = null;
 let currentCall;
 let toggleStreamPage = false;
+let mediaRecorder;
+let recordedChunks = [];
 header.style.display = "none";
 chatDiv.style.display = "none";
 StreamDiv.style.display = "none";
@@ -112,7 +115,7 @@ socket.on("REGISTER_FALSE", () => {
   alert("Vui lòng chọn username khác");
 });
 function OpenStream() {
-  const config = { audio: false, video: true };
+  const config = { audio: true, video: true };
   return navigator.mediaDevices.getUserMedia(config);
 }
 function PlayStream(idVideoTag, stream) {
@@ -120,7 +123,7 @@ function PlayStream(idVideoTag, stream) {
   video.srcObject = stream;
   setTimeout(() => {
     video.play();
-  }, 1500);
+  }, 1000);
 }
 function stopStreaming() {
   // Tắt sự kiện khi streamer chuyển trang
@@ -137,7 +140,7 @@ function stopStreaming() {
   if (mediaStream) {
     mediaStream.getTracks().forEach((track) => track.stop());
   }
-
+  stopRecording();
   // Ẩn hoặc chuyển đến trang mới
   // StreamDiv.style.display = "none";
   // chatDiv.style.display = "block";
@@ -159,6 +162,43 @@ function stopCalling() {
 stopCallingButton.addEventListener("click", () => {
   stopCalling();
 });
+function startRecording(stream) {
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+
+  // Lưu các đoạn dữ liệu vào mảng khi có sẵn
+  mediaRecorder.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      recordedChunks.push(event.data);
+    }
+  };
+  // Tải xuống bản ghi khi có sẵn
+  mediaRecorder.onstop = () => {
+    console.log(recordedChunks);
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = "recording.webm";
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    console.log("Recording downloaded");
+    recordedChunks = [];
+  };
+  // Bắt đầu ghi
+  mediaRecorder.start();
+  console.log("Recording started");
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+    console.log("Recording stopped");
+    recordedChunks = [];
+  }
+}
 socket.on("STOP_CALLING", () => {
   if (mediaStream) {
     // console.log(mediaStream);
@@ -385,7 +425,7 @@ watchStreamPage.addEventListener("click", () => {
       video.play();
       setTimeout(() => {
         video.pause();
-      }, 1500);
+      }, 3000);
       video.addEventListener("click", () => {
         // PlayStream("liveStream", video);
         const liveStreamVideo = document.getElementById("WatchLiveStream");
@@ -444,6 +484,7 @@ onStreamBtn.addEventListener("click", () => {
   });
   OpenStream().then((stream) => {
     PlayStream("liveStream", stream);
+    startRecording(stream);
     mediaStream = stream;
     // console.log(listUser);
     // console.log(listUser.filter((user) => user.id !== userID));
@@ -484,7 +525,65 @@ socket.on("SOMEONE_LIVESTREAMING", ({ streamer }) => {
   // console.log(streamer);
   currentStreamer = streamer;
 });
+shareScreenButton.addEventListener(
+  "click",
+  async () => {
+    try {
+      // Lấy luồng chia sẻ màn hình
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true, // Bật nếu muốn chia sẻ âm thanh hệ thống
+      });
+      stopRecording();
+      // Cập nhật stream mới cho video element để xem trước chia sẻ màn hình
+      PlayStream("liveStream", screenStream);
+      startRecording(screenStream);
+      // Cập nhật stream cho tất cả các cuộc gọi hiện tại
+      listCall.forEach((call) => {
+        // Lấy các track video hiện tại và thay thế bằng track từ screenStream
+        const sender = call.peerConnection
+          .getSenders()
+          .find((s) => s.track.kind === "video");
+        if (sender) {
+          sender.replaceTrack(screenStream.getVideoTracks()[0]);
+        }
+      });
 
+      // Dừng luồng video camera cũ nếu cần thiết
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
+
+      // Cập nhật lại mediaStream với luồng màn hình mới
+      mediaStream = screenStream;
+
+      // Xử lý sự kiện khi người dùng ngừng chia sẻ màn hình
+      screenStream.getVideoTracks()[0].onended = () => {
+        console.log("Screen sharing stopped");
+        stopRecording();
+        // Bạn có thể gọi lại hàm OpenStream để quay lại stream từ camera
+        OpenStream().then((stream) => {
+          PlayStream("liveStream", stream);
+          mediaStream = stream;
+          startRecording(stream);
+          // Cập nhật lại các cuộc gọi với stream camera
+          listCall.forEach((call) => {
+            const sender = call.peerConnection
+              .getSenders()
+              .find((s) => s.track.kind === "video");
+            if (sender) {
+              sender.replaceTrack(stream.getVideoTracks()[0]);
+            }
+          });
+        });
+      };
+    } catch (error) {
+      console.error("Error switching to screen share:", error);
+    }
+  }
+
+  // Gọi hàm `switchToScreenShare` khi muốn chuyển sang chia sẻ màn hình
+);
 // ----------------------------Chating---------------------------------------
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
