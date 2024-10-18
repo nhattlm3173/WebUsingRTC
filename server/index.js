@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
       });
     }
   });
+
   socket.on("REJECT_CALL", ({ callerPeerID, username }) => {
     const receiverSocket = arrUserInfo.find(
       (user) => user.peerID === callerPeerID
@@ -96,7 +97,14 @@ io.on("connection", (socket) => {
     io.to(receiverSocket.socketID).emit("CALL_REJECTION_NOTIFICATION", message);
   });
   // socket.emit("CHAT_MESSAGE_HISTORY", chatHistory);
-
+  socket.on("REQUEST_STOP_CALLING", (receiverID) => {
+    const receiverSocket = arrUserInfo.find(
+      (user) => user.peerID === receiverID
+    );
+    if (receiverSocket) {
+      io.to(receiverSocket.socketID).emit("STOP_CALLING");
+    }
+  });
   socket.on("NEW_CHAT_MESSAGE", (data) => {
     const { userID, message } = data;
     const user = arrUserInfo.find((u) => u.peerID === userID);
@@ -107,16 +115,13 @@ io.on("connection", (socket) => {
     }
   });
 
-
-
-
   // socket.on("CHAT_COMMENT_HISTORY", (streamId) => {
 
   // });
   //COMMENT
   socket.on("CREATE_CHAT_COMMENT_ROOM", (streamId) => {
     // Lọc lịch sử chat theo streamerID
-    const messages = chatHistory.filter(u => u.streamerID === streamId);
+    const messages = chatHistory.filter((u) => u.streamerID === streamId);
     streamID = streamId;
     console.log(messages); // Log ra lịch sử comment
 
@@ -126,13 +131,15 @@ io.on("connection", (socket) => {
     }
   });
 
-
-
   socket.on("NEW_CHAT_COMMENT", (data) => {
     const { userID, message, streamerID } = data;
     const user = arrUserInfo.find((u) => u.peerID === userID);
     if (user) {
-      const chatMessage = { streamerID: streamerID, username: user.username, message };
+      const chatMessage = {
+        streamerID: streamerID,
+        username: user.username,
+        message,
+      };
       chatHistory.push(chatMessage); // Lưu tin nhắn vào lịch sử
       io.emit("RECEIVE_CHAT_COMMENT", chatMessage);
     }
