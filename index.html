@@ -83,10 +83,22 @@
         </ul>
     </div>
     <div id="StreamDiv">
-        <button id="onStream">Stream</button>
-        <video style="max-width: 500px;" id="liveStream" controls></video>
-        <button id="stopLiveStream">Stop</button>
-        <button id="shareScreen">Share Screen</button>
+        <div id="streamOption">
+            <video id="liveStream" controls></video>
+            <div id="NhatLor">
+                <button id="onStream">Live</button>
+                <button id="stopLiveStream">Stop</button>
+                <button id="shareScreen">Share Screen</button>
+            </div>
+        </div>
+        <ul id="chatMCommentsFan"></ul>
+        <!-- <div id="chatCommentsContainer">
+            <ul id="chatMComments"></ul>
+            <div id="inputCmtDiv">
+                <input type="text" id="chatCommentsInput" placeholder="Nhập bình luận...">
+                <button id="sendCommentsButton">Comment</button>
+            </div>
+        </div> --> 
     </div>
     <script src="main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

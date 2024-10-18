@@ -108,7 +108,7 @@ body {
     margin-bottom: 20px;
 }
 
-.videoCall {
+#videoCall {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -133,6 +133,29 @@ body {
     box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.3);
     border-radius: 0.75em;
 
+}
+
+#stopCalling {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    border: none;
+    background-color: white;
+    border-radius: 100%;
+    padding: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 5px 5px 10px 0px #000000;
+
+}
+
+#stopCalling img {
+    height: 40px;
+    width: 40px;
+    z-index: 1;
+    border: none;
 }
 
 html,
@@ -419,6 +442,29 @@ body {
 
 
 
+#ulVideo {
+    display: flex;
+    flex-wrap: wrap;
+    /* Cho phép xuống dòng */
+    justify-content: center;
+    align-items: center;
+    list-style-type: none;
+    max-width: 1440px;
+    word-wrap: break-word;
+    /* Ngắt từ khi không đủ chỗ */
+    word-break: break-word;
+    /* Ngắt từ theo ký tự khi cần */
+    white-space: normal;
+    /* Cho phép ngắt dòng theo cách thông thường */
+    gap: 2em;
+    /* Khoảng cách giữa các video */
+}
+
+#ulVideo video {
+    border-radius: 0.75em;
+    box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.438);
+}
+
 
 
 #streamCmt {
@@ -433,12 +479,15 @@ body {
 @media (max-width: 1100px) {
     #streamCmt {
         flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
 }
 
 #streamCmt #WatchLiveStream {
     width: 50%;
     border-radius: 0.75em;
+    box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.438);
 }
 
 
@@ -462,6 +511,23 @@ body {
     width: 100%;
     color: rgb(177, 109, 240);
     /* font-size: larger; */
+}
+
+#chatMComments::-webkit-scrollbar {
+    width: 8px;
+    /* Chiều rộng của thanh cuộn */
+}
+
+#chatMComments::-webkit-scrollbar-thumb {
+    background-color: blueviolet;
+    /* Màu của thanh cuộn */
+    border-radius: 4px;
+    /* Bo tròn thanh cuộn */
+}
+
+#chatMComments::-webkit-scrollbar-track {
+    background: transparent;
+    /* Nền thanh cuộn */
 }
 
 #chatMComments li {
@@ -533,4 +599,144 @@ body {
 #sendCommentsButton:hover {
     background-color: blueviolet;
     color: white;
+}
+
+#StreamDiv {
+    display: flex;
+    /* flex-direction: column; */
+    justify-content: flex-start;
+    align-items: center;
+    margin: 2em;
+    gap: 1em;
+}
+
+#streamOption {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin: 2em;
+    gap: 1em;
+}
+
+#liveStream {
+    border-radius: 0.75em;
+    box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+#NhatLor {
+    display: flex;
+    /* flex-direction: column; */
+    justify-content: center;
+    align-items: center;
+    gap: 1em;
+}
+
+#onStream {
+    font-size: medium;
+    background-color: rgb(201, 144, 255);
+    color: white;
+    border: none;
+    border-radius: 0.75em;
+    padding: 5px 10px;
+}
+
+#onStream:hover {
+    background-color: blueviolet;
+}
+
+#stopLiveStream {
+    font-size: medium;
+    background-color: rgb(255, 121, 121);
+    color: white;
+    border: none;
+    border-radius: 0.75em;
+    padding: 5px 10px;
+}
+
+#stopLiveStream:hover {
+    background-color: red;
+}
+
+#chatMCommentsFan {
+    display: none;
+    /* Ẩn phần tử nếu không cần hiển thị */
+    flex-direction: column;
+    /* Không cần nếu không sử dụng flexbox */
+    gap: 0.25em;
+    /* Khoảng cách giữa các mục */
+    list-style-type: none;
+    /* Bỏ kiểu danh sách */
+    max-height: 450px;
+    /* Chiều cao tối đa */
+    overflow-y: scroll;
+    /* Cho phép cuộn dọc */
+    margin: 0;
+    /* Bỏ margin */
+    padding: 10px;
+    /* Padding bên trong */
+    margin-bottom: 0.25em;
+    /* Margin dưới cùng */
+    width: 100%;
+    height: 450px;
+    /* Chiều rộng 100% */
+    color: rgb(177, 109, 240);
+    /* Màu chữ */
+    border: 1px solid blueviolet;
+    /* Border xung quanh */
+    border-radius: 0.75em;
+    /* Bo tròn các góc */
+    position: relative;
+    /* Để định vị các phần tử con nếu cần */
+    clip-path: inset(0 0 0 0 round 0.75em);
+    /* Bo tròn thêm bằng clip-path */
+    box-shadow: 5px 5px 10px 0px #000000;
+}
+
+#chatMCommentsFan::-webkit-scrollbar {
+    width: 8px;
+    /* Chiều rộng của thanh cuộn */
+}
+
+#chatMCommentsFan::-webkit-scrollbar-thumb {
+    background-color: blueviolet;
+    /* Màu của thanh cuộn */
+    border-radius: 4px;
+    /* Bo tròn thanh cuộn */
+}
+
+#chatMCommentsFan::-webkit-scrollbar-track {
+    background: transparent;
+    /* Nền thanh cuộn */
+}
+
+
+#chatMCommentsFan li {
+    display: flex;
+    gap: 0.25em;
+    list-style-type: none;
+    margin-bottom: 0.25em;
+    width: 100%;
+    justify-content: flex-start;
+    align-items: center;
+    /* Đảm bảo nội dung tự xuống dòng khi quá dài */
+    word-wrap: break-word;
+    /* Ngắt từ khi không đủ chỗ */
+    word-break: break-word;
+    /* Ngắt từ theo ký tự khi cần */
+    white-space: normal;
+    /* Cho phép ngắt dòng theo cách thông thường */
+}
+
+#chatMCommentsFan #p1 {
+    font-weight: 700;
+    color: blueviolet;
+    margin: 0;
+    font-size: larger;
+}
+
+#chatMCommentsFan p {
+    color: rgb(199, 150, 245);
+    margin: 0;
+    font-size: larger;
 }

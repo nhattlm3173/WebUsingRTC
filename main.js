@@ -1,5 +1,5 @@
-const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-// const socket = io("http://localhost:3000");
+// const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
+const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
@@ -26,9 +26,11 @@ const sendCommentsButton = document.getElementById("sendCommentsButton");
 const stopCallingButton = document.getElementById("stopCalling");
 const stopstopStreaming = document.getElementById("stopLiveStream");
 const shareScreenButton = document.getElementById("shareScreen");
+const chatMCommentsFan = document.getElementById("chatMCommentsFan");
 const listUser = [];
 let listCall = [];
 let mediaStream;
+let calling = false;
 // let watchStreamUsers = [];
 let userID;
 let currentStreamer;
@@ -146,6 +148,8 @@ function stopStreaming() {
   // chatDiv.style.display = "block";
 }
 stopstopStreaming.addEventListener("click", () => {
+  chatMCommentsFan.innerHTML = "";
+  socket.emit("DELETE_HISTORY_COMMENT_BY_USERID", userID);
   stopStreaming();
 });
 function stopCalling() {
@@ -160,6 +164,7 @@ function stopCalling() {
   }
 }
 stopCallingButton.addEventListener("click", () => {
+  chatMComments.innerHTML = "";
   stopCalling();
 });
 function startRecording(stream) {
@@ -207,6 +212,7 @@ socket.on("STOP_CALLING", () => {
   if (currentCall) {
     currentCall.close(); // Đóng cuộc gọi
     currentCall = null; // Xóa tham chiếu tới cuộc gọi để có thể gọi lại lần sau
+    calling = false;
   }
 });
 // OpenStream().then((stream) => PlayStream("localStream", stream));
@@ -357,6 +363,8 @@ StreamPage.addEventListener("click", () => {
   }
 });
 liveStreamPage.addEventListener("click", () => {
+  chatCommentsContainer.style.display = "block";
+  chatMCommentsFan.style.display = "flex";
   // console.log(mediaStream);
   if (mediaStream && !currentStreamer) {
     // console.log(mediaStream);
@@ -371,7 +379,19 @@ liveStreamPage.addEventListener("click", () => {
   }
 });
 let currentStreamerId = null;
+let isClick = false;
 watchStreamPage.addEventListener("click", () => {
+  if (isClick) {
+    return;
+  }
+  isClick = true;
+  // Xử lý các logic khác của bạn...
+
+  // Bật lại nút sau 3 giây
+  setTimeout(() => {
+    isClick = false;
+  }, 3000);
+  chatMCommentsFan.style.display = "none";
   stopStreaming();
   chatDiv.style.display = "none";
   StreamDiv.style.display = "none";
@@ -386,6 +406,7 @@ watchStreamPage.addEventListener("click", () => {
   socket.emit("USER_VIEW_LIVESTREAM", { peerID: userID });
   if (callHandler) {
     peer.off("call", callHandler);
+    console.log(callHandler);
   }
   // if (listCall.length > 0) {
   //   console.log(listCall);
@@ -408,55 +429,62 @@ watchStreamPage.addEventListener("click", () => {
 
     call.answer();
     // PlayStream("localStream", stream);
+    const receivedStreams = new Set();
     call.on("stream", (remoteStream) => {
-      const li = document.createElement("li");
-      // Tạo một thẻ video mới
-      const video = document.createElement("video");
+      if (!receivedStreams.has(remoteStream.id)) {
+        receivedStreams.add(remoteStream.id);
+        // console.log("New stream received from:", call.peer);
+        // console.log("Stream details:", remoteStream);
+        const li = document.createElement("li");
+        // Tạo một thẻ video mới
+        const video = document.createElement("video");
 
-      // Thiết lập thuộc tính để video tự động phát và tắt âm thanh của nó (nếu cần)
-      video.autoplay = true;
-      video.muted = true; // Set muted to true if you don't want to hear your own audio
-      video.audio = true;
-      // Gán remoteStream vào thẻ video
-      // video.poster = "images/background.jpg";
-      // video.width = "100px";
-      // video.height = "100px";
-      video.srcObject = remoteStream;
-      video.play();
-      setTimeout(() => {
-        video.pause();
-      }, 3000);
-      video.addEventListener("click", () => {
-        // PlayStream("liveStream", video);
-        const liveStreamVideo = document.getElementById("WatchLiveStream");
-        chatCommentsContainer.style.display = "block";
-        // Nếu người dùng đã ở trong room của streamer khác, rời khỏi room đó
-        if (currentStreamerId !== call.peer) {
-          chatMComments.innerHTML = "";
-          currentStreamerId = call.peer;
-          socket.emit("CREATE_CHAT_COMMENT_ROOM", call.peer);
-          // socket.emit("CHAT_COMMENT_HISTORY", call.peer);
-        }
-        if (liveStreamVideo) {
-          // Gán stream của thẻ video được click vào thẻ liveStreamVideo
-          liveStreamVideo.srcObject = video.srcObject;
-          liveStreamVideo.play();
-          li.style.display = "none";
-          const videoElements = document.querySelectorAll(
-            "#WatchStreamDiv #ulVideo li"
-          );
-          console.log(videoElements);
-          videoElements.forEach((item) => {
-            if (item !== li) {
-              item.style.display = "block";
-            }
-          });
-          // Bắt đầu phát stream
-        }
-      });
-      li.appendChild(video);
-      // Thêm thẻ video vào một container trên trang, ví dụ như `#remoteVideoContainer`
-      ulVideo.appendChild(li);
+        // Thiết lập thuộc tính để video tự động phát và tắt âm thanh của nó (nếu cần)
+        video.autoplay = true;
+        video.muted = true; // Set muted to true if you don't want to hear your own audio
+        video.audio = true;
+        // Gán remoteStream vào thẻ video
+        // video.poster = "images/background.jpg";
+        // video.width = "100px";
+        // video.height = "100px";
+        video.srcObject = remoteStream;
+        video.play();
+        setTimeout(() => {
+          video.pause();
+        }, 3000);
+        video.addEventListener("click", () => {
+          // PlayStream("liveStream", video);
+          const liveStreamVideo = document.getElementById("WatchLiveStream");
+          chatCommentsContainer.style.display = "block";
+          // Nếu người dùng đã ở trong room của streamer khác, rời khỏi room đó
+          if (currentStreamerId !== call.peer) {
+            chatMComments.innerHTML = "";
+            currentStreamerId = call.peer;
+            socket.emit("CREATE_CHAT_COMMENT_ROOM", call.peer);
+            // socket.emit("CHAT_COMMENT_HISTORY", call.peer);
+          }
+          if (liveStreamVideo) {
+            // Gán stream của thẻ video được click vào thẻ liveStreamVideo
+            liveStreamVideo.srcObject = video.srcObject;
+            liveStreamVideo.play();
+            li.style.display = "none";
+            const videoElements = document.querySelectorAll(
+              "#WatchStreamDiv #ulVideo li"
+            );
+            // console.log(videoElements);
+            videoElements.forEach((item) => {
+              if (item !== li) {
+                item.style.display = "block";
+              }
+            });
+            // Bắt đầu phát stream
+          }
+        });
+        console.log(li);
+        li.appendChild(video);
+        // Thêm thẻ video vào một container trên trang, ví dụ như `#remoteVideoContainer`
+        ulVideo.appendChild(li);
+      }
     });
     // });
   };
@@ -801,4 +829,17 @@ socket.on("RECEIVE_CHAT_COMMENT", (data) => {
   li.appendChild(p1);
   li.appendChild(p2);
   chatMComments.appendChild(li);
+});
+socket.on("RECEIVE_CHAT_COMMENT_FOR_STREAMER", (history) => {
+  chatMCommentsFan.innerHTML = ""; // Hoặc giữ lại comment cũ
+  const { streamerID, username, message } = history;
+  const li = document.createElement("li");
+  const p1 = document.createElement("p");
+  p1.id = "p1";
+  const p2 = document.createElement("p");
+  p1.textContent = `${username}: `;
+  p2.textContent = `${message}`;
+  li.appendChild(p1);
+  li.appendChild(p2);
+  chatMCommentsFan.appendChild(li);
 });
