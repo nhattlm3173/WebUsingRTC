@@ -1193,7 +1193,7 @@ socket.on("RECEIVE_FILE", (fileMessage) => {
 function displayFileName() {
   // Lấy tên file và cập nhật nội dung của span
   if (fileInput.files.length > 0) {
-    fileNameSpan.textContent = input.files[0].name;
+    fileNameSpan.textContent = fileInput.files[0].name;
   } else {
     fileNameSpan.textContent = "...";
   }
