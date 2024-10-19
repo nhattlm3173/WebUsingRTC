@@ -50,6 +50,17 @@ body {
     color: blueviolet;
 }
 
+.type div {
+    font-size: large;
+    cursor: pointer;
+    font-weight: 700;
+    color: rgb(179, 122, 232);
+}
+
+.type div:hover {
+    color: blueviolet;
+}
+
 .profile {
     display: flex;
     align-items: center;
@@ -289,17 +300,29 @@ body {
     position: relative;
 }
 
+#StreamPage {
+    position: relative;
+}
+
 #SelectStreamPage {
-    display: flex;
+    display: none;
     position: absolute;
-    top: 9%;
-    left: 56.4%;
-    flex-wrap: wrap;
-    background-color: rgba(97, 206, 246, 0.488);
+    top: 2em;
+    left: 0;
+    flex-direction: column;
+    background-color: rgb(255, 218, 255);
     padding: 10px;
-    z-index: 1000;
+    z-index: 1;
     border-radius: 10px;
-    width: 10%;
+    width: auto !important;
+}
+
+#SelectStreamPage a {
+    color: rgb(188, 117, 255);
+}
+
+#SelectStreamPage a:hover {
+    color: rgb(127, 0, 245);
 }
 
 #liveStreamPage {
@@ -317,6 +340,15 @@ body {
 @media (max-width: 1100px) {
     #SelectStreamPage {
         width: 30%;
+    }
+}
+
+@media (max-width: 1100px) {
+    #divChat {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
     }
 }
 
@@ -339,8 +371,8 @@ body {
     flex-direction: column;
     gap: 0.25em;
     list-style-type: none;
-    height: 100%;
-    max-height: 200px;
+    height: 350px;
+    max-height: 350px;
     overflow-y: scroll;
     margin: 0;
     padding: 0;
@@ -350,10 +382,31 @@ body {
 #chatMessages #sendLi {
     display: flex;
     justify-content: flex-end;
+    align-items: flex-end;
     height: auto;
+    flex-direction: column;
 }
 
 #chatMessages #sendLi p {
+    padding: 5px 10px;
+    border-radius: 0.5em;
+    background-color: rgb(175, 111, 239);
+    border: none;
+    color: white;
+    font-size: medium;
+    width: auto;
+    margin: 0;
+    max-width: 200px;
+    /* Đảm bảo nội dung tự xuống dòng khi quá dài */
+    word-wrap: break-word;
+    /* Ngắt từ khi không đủ chỗ */
+    word-break: break-word;
+    /* Ngắt từ theo ký tự khi cần */
+    white-space: normal;
+    /* Cho phép ngắt dòng theo cách thông thường */
+}
+
+#chatMessages #sendLi a {
     padding: 5px 10px;
     border-radius: 0.5em;
     background-color: rgb(175, 111, 239);
@@ -739,4 +792,84 @@ body {
     color: rgb(199, 150, 245);
     margin: 0;
     font-size: larger;
+}
+
+
+#fileImg {
+    width: 200px;
+    border-radius: 0.5em;
+}
+
+#fileA {
+    background-color: rgb(153, 151, 155);
+    list-style-type: none;
+    padding: 5px 10px;
+    color: white;
+    border-radius: 0.5em;
+}
+
+/* #sendLi {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 0.25em;
+} */
+
+
+#sendFileImg {
+    width: 200px;
+    border-radius: 0.5em;
+}
+
+#sendFileA {}
+
+#sendVideo {
+    width: 200px;
+    /* height: 200px; */
+    border-radius: 0.5em;
+}
+
+#recieveVideo {
+    width: 200px;
+    border-radius: 0.5em;
+}
+
+.custom-file-input {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #6aabff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    /* width: 100px; */
+}
+
+.custom-file-input:hover {
+    background-color: #2c4868;
+    /* Đổi màu khi hover */
+}
+
+#fileName {
+    width: 200px;
+    display: inline-block;
+    max-width: 200px;
+    /* Giới hạn chiều dài tối đa */
+    white-space: nowrap;
+    /* Không cho phép ngắt dòng */
+    overflow: hidden;
+    /* Ẩn phần vượt quá kích thước */
+    text-overflow: ellipsis;
+    /* Hiển thị dấu "..." nếu quá dài */
+    vertical-align: middle;
+    /* Căn giữa theo chiều dọc */
+}
+
+#shareScreen {
+    font-size: medium;
+    background-color: rgb(121, 213, 255);
+    color: white;
+    border: none;
+    border-radius: 0.75em;
+    padding: 5px 10px;
 }

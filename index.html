@@ -29,12 +29,13 @@
         </div>
         <div class="type">
             <a id="VideoCallPage">Video Call</a>
-            <a id="StreamPage">Stream
+            <div id="StreamPage">
+                <p id="streamP">Stream</p>
                 <div id="SelectStreamPage">
-                    <a id="liveStreamPage">Live Stream</a>
-                    <a id="watchStreamPage">Watch Stream</a>
+                    <a id="liveStreamPage">Live</a>
+                    <a id="watchStreamPage">Watch</a>
                 </div>
-            </a>
+            </div>
         </div>
         <div class="profile">
             <input type="text" id="searchUser" placeholder="Search">
@@ -45,18 +46,23 @@
     <div id="divChat">
         <h3 style="display: none;" id="peerId">Your peer ID: </h3>
 
-        <div class="videoCall">
+        <div id="videoCall">
             <video id="remoteStream" controls></video>
             <video id="localStream" controls></video>
-            <button id="stopCalling">stop</button>
+            <button id="stopCalling"><img src="./images/phone-call.png" alt=""></button>
         </div>
         <input type="text" style="display: none;" id="remoteId" placeholder="Remote ID">
         <button style="display: none;" id="btnCall">Call</button>
         <div id="chatContainer">
             <ul id="chatMessages"></ul>
             <div id="inputDiv">
+                <input type="file" id="fileInput" style="display:none; " onchange="displayFileName()">
+                <label for="fileInput" class="custom-file-input">File</label>
+                <span id="fileName">...</span>
                 <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
                 <button id="sendMessageButton">Send</button>
+
+                <!-- <button id="sendFileBtn">Gửi file</button> -->
             </div>
         </div>
     </div>
@@ -98,11 +104,11 @@
                 <input type="text" id="chatCommentsInput" placeholder="Nhập bình luận...">
                 <button id="sendCommentsButton">Comment</button>
             </div>
-        </div> --> 
+        </div> -->
     </div>
     <script src="main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
 </body>
 
 </html>

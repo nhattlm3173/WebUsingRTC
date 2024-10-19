@@ -1,5 +1,5 @@
-const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-// const socket = io("http://localhost:3000");
+// const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
+const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
@@ -27,6 +27,10 @@ const stopCallingButton = document.getElementById("stopCalling");
 const stopstopStreaming = document.getElementById("stopLiveStream");
 const shareScreenButton = document.getElementById("shareScreen");
 const chatMCommentsFan = document.getElementById("chatMCommentsFan");
+const videoCall = document.getElementById("videoCall");
+const streamP = document.getElementById("streamP");
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB (đơn vị tính là byte)
+
 const listUser = [];
 let listCall = [];
 let mediaStream;
@@ -282,6 +286,7 @@ searchUserInput.addEventListener("input", function () {
       li.id = user.id;
       li.addEventListener("click", () => {
         senderId = user.id;
+        calling = true;
         socket.emit("CALL_USER", {
           callerPeerID: userID,
           callerName: username,
@@ -320,6 +325,7 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
   }).then((result) => {
     if (result.isConfirmed) {
       // Người dùng chọn Accept
+      calling = true;
       receiverId = callerPeerID;
       OpenStream().then((stream) => {
         mediaStream = stream;
@@ -331,6 +337,7 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
         );
       });
     } else {
+      calling = false;
       // Người dùng chọn Reject
       socket.emit("REJECT_CALL", {
         callerPeerID: callerPeerID,
@@ -340,6 +347,7 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
   });
 });
 socket.on("CALL_REJECTION_NOTIFICATION", (message) => {
+  calling = false;
   Swal.fire({
     title: "Cuộc gọi bị từ chối",
     text: message,
@@ -353,14 +361,18 @@ VideoCallPage.addEventListener("click", () => {
   StreamDiv.style.display = "none";
   WatchStreamDiv.style.display = "none";
 });
-StreamPage.addEventListener("click", () => {
-  if (!toggleStreamPage) {
+streamP.addEventListener("mouseenter", () => {
+  SelectStreamPage.style.display = "flex";
+  SelectStreamPage.addEventListener("mouseenter", () => {
     SelectStreamPage.style.display = "flex";
-    toggleStreamPage = !toggleStreamPage;
-  } else {
+  })
+  SelectStreamPage.addEventListener("mouseleave", () => {
     SelectStreamPage.style.display = "none";
-    toggleStreamPage = !toggleStreamPage;
-  }
+  })
+
+});
+streamP.addEventListener("mouseleave", () => {
+  SelectStreamPage.style.display = "none";
 });
 liveStreamPage.addEventListener("click", () => {
   chatCommentsContainer.style.display = "block";
@@ -371,7 +383,7 @@ liveStreamPage.addEventListener("click", () => {
     mediaStream.getTracks().forEach((track) => track.stop());
   }
   chatDiv.style.display = "none";
-  StreamDiv.style.display = "block";
+  StreamDiv.style.display = "flex";
   WatchStreamDiv.style.display = "none";
   if (currentCall) {
     currentCall.close(); // Đóng cuộc gọi
@@ -616,58 +628,170 @@ shareScreenButton.addEventListener(
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const sendMessageButton = document.getElementById("sendMessageButton");
-
+const fileInput = document.getElementById('fileInput');
+const fileNameSpan = document.getElementById('fileName');
 sendMessageButton.addEventListener("click", async () => {
   const message = chatInput.value;
   const username = textUsername.value;
-  console.log(username);
+
+  const file = fileInput.files[0];
+  // console.log(username);
   // Kiểm tra xem người gửi và người nhận có hợp lệ không
-  if (!message) {
-    alert("Vui lòng nhập tin nhắn!");
+  if (!message && !file) {
+    console.log("cmm")
+    alert("Vui lòng nhập tin nhắn hoặc gửi file");
     return;
   }
   const receiver = listUser.find((user) => user.id === receiverId);
   const sender = listUser.find((user) => user.id === senderId);
-  if (receiver) {
-    const publicKeyReceiver = await crypto.subtle.importKey(
-      "spki",
-      Uint8Array.from(atob(receiver.publicKey), (c) => c.charCodeAt(0)),
-      { name: "RSA-OAEP", hash: "SHA-256" },
-      true,
-      ["encrypt"]
-    );
-    const li = document.createElement("li");
-    const p = document.createElement("p");
-    p.id = "sendP";
-    li.id = "sendLi";
-    p.textContent = `${message}`;
-    li.appendChild(p);
-    chatMessages.appendChild(li);
-    const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
-    console.log("Encrypted message:", encryptedMessage);
 
-    socket.emit("NEW_CHAT_MESSAGE", { userID, message: encryptedMessage });
-    chatInput.value = "";
-  } else if (sender) {
-    const publicKeyReceiver = await crypto.subtle.importKey(
-      "spki",
-      Uint8Array.from(atob(sender.publicKey), (c) => c.charCodeAt(0)),
-      { name: "RSA-OAEP", hash: "SHA-256" },
-      true,
-      ["encrypt"]
-    );
-    const li = document.createElement("li");
-    const p = document.createElement("p");
-    p.id = "sendP";
-    li.id = "sendLi";
-    p.textContent = `${message}`;
-    li.appendChild(p);
-    chatMessages.appendChild(li);
-    const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
-    socket.emit("NEW_CHAT_MESSAGE", { userID, message: encryptedMessage });
-    chatInput.value = "";
-  } else {
-    alert("Không tìm thấy người nhận!");
+
+  if (message) {
+    if (receiver) {
+      const publicKeyReceiver = await crypto.subtle.importKey(
+        "spki",
+        Uint8Array.from(atob(receiver.publicKey), (c) => c.charCodeAt(0)),
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["encrypt"]
+      );
+      const li = document.createElement("li");
+      const p = document.createElement("p");
+      p.id = "sendP";
+      li.id = "sendLi";
+      p.textContent = `${message}`;
+      li.appendChild(p);
+      chatMessages.appendChild(li);
+      const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
+      console.log("Encrypted message:", encryptedMessage);
+
+      socket.emit("NEW_CHAT_MESSAGE", { userID, receiverId, senderId, message: encryptedMessage });
+      chatInput.value = "";
+    } else if (sender) {
+      const publicKeyReceiver = await crypto.subtle.importKey(
+        "spki",
+        Uint8Array.from(atob(sender.publicKey), (c) => c.charCodeAt(0)),
+        { name: "RSA-OAEP", hash: "SHA-256" },
+        true,
+        ["encrypt"]
+      );
+      const li = document.createElement("li");
+      const p = document.createElement("p");
+      p.id = "sendP";
+      li.id = "sendLi";
+      p.textContent = `${message}`;
+      li.appendChild(p);
+      chatMessages.appendChild(li);
+      const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
+      socket.emit("NEW_CHAT_MESSAGE", { userID, receiverId, senderId, message: encryptedMessage });
+      chatInput.value = "";
+    } else {
+      alert("Không tìm thấy người nhận!");
+    }
+  }
+
+  if (file) {
+    if (file.size > MAX_FILE_SIZE) {
+      alert("File quá lớn, vui lòng chọn file nhỏ hơn!");
+      return;
+    }
+    const reader = new FileReader();
+
+    // Đọc nội dung file dưới dạng binary
+    reader.readAsArrayBuffer(file);
+    if (receiver) {
+      const li = document.createElement("li");
+      console.log("receiver")
+      // Tạo đoạn văn hiển thị thông tin người gửi và tên file
+      const p1 = document.createElement("p");
+      p1.textContent = `${file.name}`;
+      li.id = 'sendLi';
+
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(new Blob([file]));
+        img.id = 'sendFileImg';// Tạo URL tạm cho file ảnh
+        li.appendChild(img);
+      } else if (file.type.startsWith('video/')) {
+        // li.appendChild(p1);
+        const video = document.createElement("video");
+        video.controls = true;
+        video.id = 'sendVideo';
+        video.src = URL.createObjectURL(new Blob([file])); // Tạo URL tạm cho file video
+        li.appendChild(video);
+      } else {
+        // li.appendChild(p1);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([file]));
+        a.download = file.name; // Cho phép tải file
+        a.textContent = file.name;
+        a.id = 'sendFileA'
+        li.appendChild(a);
+      }
+
+      // Thêm li vào danh sách tin nhắn
+      document.getElementById("chatMessages").appendChild(li);
+      reader.onload = () => {
+        // Gửi file qua Socket.IO
+        socket.emit('SEND_FILE', {
+          file: reader.result, // Nội dung file dưới dạng binary
+          fileName: file.name, // Tên file
+          fileType: file.type, // Loại file (ảnh, video, tài liệu, ...)
+          userID: userID, // ID người gửi
+          receiverId: receiverId // ID người xem (hoặc streamerID)
+        });
+
+      };
+      fileInput.value = '';
+      fileNameSpan.textContent = '...';
+    } else if (sender) {
+      const li = document.createElement("li");
+      console.log("sender")
+      // Tạo đoạn văn hiển thị thông tin người gửi và tên file
+      const p1 = document.createElement("p");
+      p1.textContent = `${file.name}`;
+      li.id = 'sendLi';
+
+
+      // Tạo thẻ để hiển thị nội dung file
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(new Blob([file]));
+        img.id = 'sendFileImg';// Tạo URL tạm cho file ảnh
+        li.appendChild(img);
+      } else if (file.type.startsWith('video/')) {
+        // li.appendChild(p1);
+        const video = document.createElement("video");
+        video.controls = true;
+        video.id = 'sendVideo';
+        video.src = URL.createObjectURL(new Blob([file])); // Tạo URL tạm cho file video
+        li.appendChild(video);
+      } else {
+        // li.appendChild(p1);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([file]));
+        a.download = file.name; // Cho phép tải file
+        a.textContent = file.name;
+        a.id = 'sendFileA'
+        li.appendChild(a);
+      }
+      document.getElementById("chatMessages").appendChild(li);
+      reader.onload = () => {
+        // Gửi file qua Socket.IO
+        socket.emit('SEND_FILE', {
+          file: reader.result, // Nội dung file dưới dạng binary
+          fileName: file.name, // Tên file
+          fileType: file.type, // Loại file (ảnh, video, tài liệu, ...)
+          userID: userID, // ID người gửi
+          receiverId: senderId // ID người xem (hoặc streamerID)
+        });
+
+      };
+      fileInput.value = '';
+      fileNameSpan.textContent = '...';
+    } else {
+      alert("Không tìm thấy người nhận!");
+    }
   }
 });
 
@@ -831,7 +955,7 @@ socket.on("RECEIVE_CHAT_COMMENT", (data) => {
   chatMComments.appendChild(li);
 });
 socket.on("RECEIVE_CHAT_COMMENT_FOR_STREAMER", (history) => {
-  chatMCommentsFan.innerHTML = ""; // Hoặc giữ lại comment cũ
+  // chatMCommentsFan.innerHTML = ""; // Hoặc giữ lại comment cũ
   const { streamerID, username, message } = history;
   const li = document.createElement("li");
   const p1 = document.createElement("p");
@@ -843,3 +967,66 @@ socket.on("RECEIVE_CHAT_COMMENT_FOR_STREAMER", (history) => {
   li.appendChild(p2);
   chatMCommentsFan.appendChild(li);
 });
+
+socket.on("RECEIVE_FILE", (fileMessage) => {
+  const { username, fileName, fileType, fileData } = fileMessage;
+  const li = document.createElement("li");
+  console.log("re....");
+  // Tạo đoạn văn hiển thị thông tin người gửi và tên file
+  const p1 = document.createElement("p");
+  p1.textContent = `${fileName}`;
+  li.id = 'recieveLi';
+
+  // Tạo thẻ để hiển thị nội dung file
+  if (fileType.startsWith('image/')) {
+    const img = document.createElement("img");
+    img.id = 'fileImg';
+    img.src = URL.createObjectURL(new Blob([fileData])); // Tạo URL tạm cho file ảnh
+    li.appendChild(img);
+  } else if (fileType.startsWith('video/')) {
+    // li.appendChild(p1);
+    const video = document.createElement("video");
+    video.controls = true;
+    video.id = 'recieveVideo';
+    video.src = URL.createObjectURL(new Blob([fileData])); // Tạo URL tạm cho file video
+    li.appendChild(video);
+  } else {
+    // li.appendChild(p1);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([fileData]));
+    a.download = fileName; // Cho phép tải file
+    a.textContent = fileName;
+    a.id = 'fileA'
+    li.appendChild(a);
+  }
+  console.log("final");
+  // Thêm li vào danh sách tin nhắn
+  document.getElementById("chatMessages").appendChild(li);
+});
+function displayFileName() {
+
+
+  // Lấy tên file và cập nhật nội dung của span
+  if (fileInput.files.length > 0) {
+    fileNameSpan.textContent = input.files[0].name;
+  } else {
+    fileNameSpan.textContent = '...';
+  }
+}
+
+
+
+videoCall.addEventListener('mouseenter', () => {
+  if (calling) {
+    stopCallingButton.style.display = 'flex';
+  } else {
+    stopCallingButton.style.display = 'none';
+  }
+})
+videoCall.addEventListener('mouseleave', () => {
+  if (calling) {
+    stopCallingButton.style.display = 'none';
+  } else {
+    stopCallingButton.style.display = 'none';
+  }
+})
