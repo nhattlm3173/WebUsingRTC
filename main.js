@@ -43,6 +43,7 @@ let currentCall;
 let toggleStreamPage = false;
 let mediaRecorder;
 let recordedChunks = [];
+let intervalId;
 header.style.display = "none";
 chatDiv.style.display = "none";
 StreamDiv.style.display = "none";
@@ -58,6 +59,23 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
   }
   callHandler = (call) => {
     currentCall = call;
+    // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
+    const peerConnection = call.peerConnection;
+
+    // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+    intervalId = setInterval(() => {
+      peerConnection.getStats(null).then((stats) => {
+        stats.forEach((report) => {
+          if (report.type === "candidate-pair" && report.currentRoundTripTime) {
+            const rtt = report.currentRoundTripTime;
+            if (rtt > 0.3) {
+              // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+              optimizeStreamQuality(peerConnection);
+            }
+          }
+        });
+      });
+    }, 5000);
     OpenStream().then((stream) => {
       mediaStream = stream;
       call.answer(stream);
@@ -121,9 +139,18 @@ socket.on("REGISTER_FALSE", () => {
   alert("Vui lòng chọn username khác");
 });
 function OpenStream() {
-  const config = { audio: true, video: true };
-  return navigator.mediaDevices.getUserMedia(config);
+  const constraints = {
+    video: {
+      width: { ideal: 640, max: 1280, min: 320 },
+      height: { ideal: 480, max: 720, min: 240 },
+      frameRate: { ideal: 30, max: 60, min: 15 },
+    },
+    audio: true,
+  };
+
+  return navigator.mediaDevices.getUserMedia(constraints);
 }
+
 function PlayStream(idVideoTag, stream) {
   const video = document.getElementById(idVideoTag);
   video.srcObject = stream;
@@ -131,7 +158,51 @@ function PlayStream(idVideoTag, stream) {
     video.play();
   }, 1000);
 }
+
+// Hàm để cập nhật cả độ phân giải và bitrate khi mạng yếu
+function optimizeStreamQuality(peerConnection) {
+  const constraintsLowQuality = {
+    video: {
+      width: { ideal: 320, max: 640, min: 160 },
+      height: { ideal: 240, max: 480, min: 120 },
+      frameRate: { ideal: 15, max: 30, min: 10 },
+    },
+    audio: true,
+  };
+
+  // Điều chỉnh độ phân giải
+  navigator.mediaDevices
+    .getUserMedia(constraintsLowQuality)
+    .then((newStream) => {
+      const videoTrack = newStream.getVideoTracks()[0];
+      const sender = peerConnection
+        .getSenders()
+        .find((s) => s.track.kind === "video");
+      sender.replaceTrack(videoTrack);
+      console.log(
+        "Stream quality updated to lower resolution due to network conditions"
+      );
+
+      // Sau khi cập nhật độ phân giải, điều chỉnh bitrate
+      const parameters = sender.getParameters();
+      if (!parameters.encodings) {
+        parameters.encodings = [{}];
+      }
+      parameters.encodings[0].maxBitrate = 300000; // Giới hạn bitrate xuống 300 kbps
+      sender
+        .setParameters(parameters)
+        .then(() => {
+          console.log("Bitrate updated to 300kbps due to network conditions");
+        })
+        .catch((error) => console.error("Error updating bitrate:", error));
+    })
+    .catch((error) => console.error("Failed to update stream quality:", error));
+}
 function stopStreaming() {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   // Tắt sự kiện khi streamer chuyển trang
   socket.off("NEW_USER_JOIN_LIVESTREAM");
   socket.off("GET_WATCHSTREAMLIST");
@@ -157,6 +228,10 @@ stopstopStreaming.addEventListener("click", () => {
   stopStreaming();
 });
 function stopCalling() {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   if (mediaStream) {
     // console.log(mediaStream);
     mediaStream.getTracks().forEach((track) => track.stop());
@@ -209,6 +284,10 @@ function stopRecording() {
   }
 }
 socket.on("STOP_CALLING", () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   if (mediaStream) {
     // console.log(mediaStream);
     mediaStream.getTracks().forEach((track) => track.stop());
@@ -332,6 +411,26 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
         PlayStream("localStream", stream);
         const call = peer.call(callerPeerID, stream);
         currentCall = call;
+        // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
+        const peerConnection = call.peerConnection;
+
+        // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+        intervalId = setInterval(() => {
+          peerConnection.getStats(null).then((stats) => {
+            stats.forEach((report) => {
+              if (
+                report.type === "candidate-pair" &&
+                report.currentRoundTripTime
+              ) {
+                const rtt = report.currentRoundTripTime;
+                if (rtt > 0.3) {
+                  // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+                  optimizeStreamQuality(peerConnection);
+                }
+              }
+            });
+          });
+        }, 5000);
         call.on("stream", (remoteStream) =>
           PlayStream("remoteStream", remoteStream)
         );
@@ -356,6 +455,10 @@ socket.on("CALL_REJECTION_NOTIFICATION", (message) => {
   });
 });
 VideoCallPage.addEventListener("click", () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   stopStreaming();
   chatDiv.style.display = "flex";
   StreamDiv.style.display = "none";
@@ -365,16 +468,19 @@ streamP.addEventListener("mouseenter", () => {
   SelectStreamPage.style.display = "flex";
   SelectStreamPage.addEventListener("mouseenter", () => {
     SelectStreamPage.style.display = "flex";
-  })
+  });
   SelectStreamPage.addEventListener("mouseleave", () => {
     SelectStreamPage.style.display = "none";
-  })
-
+  });
 });
 streamP.addEventListener("mouseleave", () => {
   SelectStreamPage.style.display = "none";
 });
 liveStreamPage.addEventListener("click", () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   chatCommentsContainer.style.display = "block";
   chatMCommentsFan.style.display = "flex";
   // console.log(mediaStream);
@@ -393,6 +499,10 @@ liveStreamPage.addEventListener("click", () => {
 let currentStreamerId = null;
 let isClick = false;
 watchStreamPage.addEventListener("click", () => {
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   if (isClick) {
     return;
   }
@@ -438,6 +548,8 @@ watchStreamPage.addEventListener("click", () => {
     // console.log(currentCall);
     // console.log("emoeos");
     // OpenStream().then((stream) => {
+    // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
+    const peerConnection = call.peerConnection;
 
     call.answer();
     // PlayStream("localStream", stream);
@@ -476,6 +588,10 @@ watchStreamPage.addEventListener("click", () => {
             // socket.emit("CHAT_COMMENT_HISTORY", call.peer);
           }
           if (liveStreamVideo) {
+            if (intervalId) {
+              clearInterval(intervalId);
+              intervalId = null;
+            }
             // Gán stream của thẻ video được click vào thẻ liveStreamVideo
             liveStreamVideo.srcObject = video.srcObject;
             liveStreamVideo.play();
@@ -490,6 +606,23 @@ watchStreamPage.addEventListener("click", () => {
               }
             });
             // Bắt đầu phát stream
+            // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+            intervalId = setInterval(() => {
+              peerConnection.getStats(null).then((stats) => {
+                stats.forEach((report) => {
+                  if (
+                    report.type === "candidate-pair" &&
+                    report.currentRoundTripTime
+                  ) {
+                    const rtt = report.currentRoundTripTime;
+                    if (rtt > 0.3) {
+                      // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+                      optimizeStreamQuality(peerConnection);
+                    }
+                  }
+                });
+              });
+            }, 5000);
           }
         });
         console.log(li);
@@ -501,6 +634,14 @@ watchStreamPage.addEventListener("click", () => {
     // });
   };
   peer.on("call", callHandler);
+  // Khi cuộc gọi kết thúc, hãy dừng setInterval
+  call.on("close", () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    console.log("Call ended, stopped interval check.");
+  });
   // if (currentStreamer) {
   //   socket.emit("USER_VIEW_LIVESTREAM", { peerID: userID });
   //   console.log(currentStreamer);
@@ -536,6 +677,26 @@ onStreamBtn.addEventListener("click", () => {
         // console.log(arrWatchStream[i].peerID);
         if (arrWatchStream[i].peerID !== userID) {
           const call = peer.call(arrWatchStream[i].peerID, stream);
+          // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
+          const peerConnection = call.peerConnection;
+
+          // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+          intervalId = setInterval(() => {
+            peerConnection.getStats(null).then((stats) => {
+              stats.forEach((report) => {
+                if (
+                  report.type === "candidate-pair" &&
+                  report.currentRoundTripTime
+                ) {
+                  const rtt = report.currentRoundTripTime;
+                  if (rtt > 0.3) {
+                    // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+                    optimizeStreamQuality(peerConnection);
+                  }
+                }
+              });
+            });
+          }, 5000);
           // console.log(listCall);
           listCall.push(call);
           call.on("stream", () => {
@@ -550,6 +711,26 @@ onStreamBtn.addEventListener("click", () => {
     socket.on("NEW_USER_JOIN_LIVESTREAM", (id) => {
       const call = peer.call(id, stream);
       listCall.push(call);
+      // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
+      const peerConnection = call.peerConnection;
+
+      // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+      intervalId = setInterval(() => {
+        peerConnection.getStats(null).then((stats) => {
+          stats.forEach((report) => {
+            if (
+              report.type === "candidate-pair" &&
+              report.currentRoundTripTime
+            ) {
+              const rtt = report.currentRoundTripTime;
+              if (rtt > 0.3) {
+                // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+                optimizeStreamQuality(peerConnection);
+              }
+            }
+          });
+        });
+      }, 5000);
       console.log(listCall);
       call.on("stream", () => {
         console.log(id);
@@ -628,8 +809,8 @@ shareScreenButton.addEventListener(
 const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const sendMessageButton = document.getElementById("sendMessageButton");
-const fileInput = document.getElementById('fileInput');
-const fileNameSpan = document.getElementById('fileName');
+const fileInput = document.getElementById("fileInput");
+const fileNameSpan = document.getElementById("fileName");
 sendMessageButton.addEventListener("click", async () => {
   const message = chatInput.value;
   const username = textUsername.value;
@@ -638,13 +819,12 @@ sendMessageButton.addEventListener("click", async () => {
   // console.log(username);
   // Kiểm tra xem người gửi và người nhận có hợp lệ không
   if (!message && !file) {
-    console.log("cmm")
+    console.log("cmm");
     alert("Vui lòng nhập tin nhắn hoặc gửi file");
     return;
   }
   const receiver = listUser.find((user) => user.id === receiverId);
   const sender = listUser.find((user) => user.id === senderId);
-
 
   if (message) {
     if (receiver) {
@@ -665,7 +845,12 @@ sendMessageButton.addEventListener("click", async () => {
       const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
       console.log("Encrypted message:", encryptedMessage);
 
-      socket.emit("NEW_CHAT_MESSAGE", { userID, receiverId, senderId, message: encryptedMessage });
+      socket.emit("NEW_CHAT_MESSAGE", {
+        userID,
+        receiverId,
+        senderId,
+        message: encryptedMessage,
+      });
       chatInput.value = "";
     } else if (sender) {
       const publicKeyReceiver = await crypto.subtle.importKey(
@@ -683,7 +868,12 @@ sendMessageButton.addEventListener("click", async () => {
       li.appendChild(p);
       chatMessages.appendChild(li);
       const encryptedMessage = await encryptMessage(publicKeyReceiver, message);
-      socket.emit("NEW_CHAT_MESSAGE", { userID, receiverId, senderId, message: encryptedMessage });
+      socket.emit("NEW_CHAT_MESSAGE", {
+        userID,
+        receiverId,
+        senderId,
+        message: encryptedMessage,
+      });
       chatInput.value = "";
     } else {
       alert("Không tìm thấy người nhận!");
@@ -701,22 +891,22 @@ sendMessageButton.addEventListener("click", async () => {
     reader.readAsArrayBuffer(file);
     if (receiver) {
       const li = document.createElement("li");
-      console.log("receiver")
+      console.log("receiver");
       // Tạo đoạn văn hiển thị thông tin người gửi và tên file
       const p1 = document.createElement("p");
       p1.textContent = `${file.name}`;
-      li.id = 'sendLi';
+      li.id = "sendLi";
 
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         const img = document.createElement("img");
         img.src = URL.createObjectURL(new Blob([file]));
-        img.id = 'sendFileImg';// Tạo URL tạm cho file ảnh
+        img.id = "sendFileImg"; // Tạo URL tạm cho file ảnh
         li.appendChild(img);
-      } else if (file.type.startsWith('video/')) {
+      } else if (file.type.startsWith("video/")) {
         // li.appendChild(p1);
         const video = document.createElement("video");
         video.controls = true;
-        video.id = 'sendVideo';
+        video.id = "sendVideo";
         video.src = URL.createObjectURL(new Blob([file])); // Tạo URL tạm cho file video
         li.appendChild(video);
       } else {
@@ -725,7 +915,7 @@ sendMessageButton.addEventListener("click", async () => {
         a.href = URL.createObjectURL(new Blob([file]));
         a.download = file.name; // Cho phép tải file
         a.textContent = file.name;
-        a.id = 'sendFileA'
+        a.id = "sendFileA";
         li.appendChild(a);
       }
 
@@ -733,37 +923,35 @@ sendMessageButton.addEventListener("click", async () => {
       document.getElementById("chatMessages").appendChild(li);
       reader.onload = () => {
         // Gửi file qua Socket.IO
-        socket.emit('SEND_FILE', {
+        socket.emit("SEND_FILE", {
           file: reader.result, // Nội dung file dưới dạng binary
           fileName: file.name, // Tên file
           fileType: file.type, // Loại file (ảnh, video, tài liệu, ...)
           userID: userID, // ID người gửi
-          receiverId: receiverId // ID người xem (hoặc streamerID)
+          receiverId: receiverId, // ID người xem (hoặc streamerID)
         });
-
       };
-      fileInput.value = '';
-      fileNameSpan.textContent = '...';
+      fileInput.value = "";
+      fileNameSpan.textContent = "...";
     } else if (sender) {
       const li = document.createElement("li");
-      console.log("sender")
+      console.log("sender");
       // Tạo đoạn văn hiển thị thông tin người gửi và tên file
       const p1 = document.createElement("p");
       p1.textContent = `${file.name}`;
-      li.id = 'sendLi';
-
+      li.id = "sendLi";
 
       // Tạo thẻ để hiển thị nội dung file
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         const img = document.createElement("img");
         img.src = URL.createObjectURL(new Blob([file]));
-        img.id = 'sendFileImg';// Tạo URL tạm cho file ảnh
+        img.id = "sendFileImg"; // Tạo URL tạm cho file ảnh
         li.appendChild(img);
-      } else if (file.type.startsWith('video/')) {
+      } else if (file.type.startsWith("video/")) {
         // li.appendChild(p1);
         const video = document.createElement("video");
         video.controls = true;
-        video.id = 'sendVideo';
+        video.id = "sendVideo";
         video.src = URL.createObjectURL(new Blob([file])); // Tạo URL tạm cho file video
         li.appendChild(video);
       } else {
@@ -772,23 +960,22 @@ sendMessageButton.addEventListener("click", async () => {
         a.href = URL.createObjectURL(new Blob([file]));
         a.download = file.name; // Cho phép tải file
         a.textContent = file.name;
-        a.id = 'sendFileA'
+        a.id = "sendFileA";
         li.appendChild(a);
       }
       document.getElementById("chatMessages").appendChild(li);
       reader.onload = () => {
         // Gửi file qua Socket.IO
-        socket.emit('SEND_FILE', {
+        socket.emit("SEND_FILE", {
           file: reader.result, // Nội dung file dưới dạng binary
           fileName: file.name, // Tên file
           fileType: file.type, // Loại file (ảnh, video, tài liệu, ...)
           userID: userID, // ID người gửi
-          receiverId: senderId // ID người xem (hoặc streamerID)
+          receiverId: senderId, // ID người xem (hoặc streamerID)
         });
-
       };
-      fileInput.value = '';
-      fileNameSpan.textContent = '...';
+      fileInput.value = "";
+      fileNameSpan.textContent = "...";
     } else {
       alert("Không tìm thấy người nhận!");
     }
@@ -975,19 +1162,19 @@ socket.on("RECEIVE_FILE", (fileMessage) => {
   // Tạo đoạn văn hiển thị thông tin người gửi và tên file
   const p1 = document.createElement("p");
   p1.textContent = `${fileName}`;
-  li.id = 'recieveLi';
+  li.id = "recieveLi";
 
   // Tạo thẻ để hiển thị nội dung file
-  if (fileType.startsWith('image/')) {
+  if (fileType.startsWith("image/")) {
     const img = document.createElement("img");
-    img.id = 'fileImg';
+    img.id = "fileImg";
     img.src = URL.createObjectURL(new Blob([fileData])); // Tạo URL tạm cho file ảnh
     li.appendChild(img);
-  } else if (fileType.startsWith('video/')) {
+  } else if (fileType.startsWith("video/")) {
     // li.appendChild(p1);
     const video = document.createElement("video");
     video.controls = true;
-    video.id = 'recieveVideo';
+    video.id = "recieveVideo";
     video.src = URL.createObjectURL(new Blob([fileData])); // Tạo URL tạm cho file video
     li.appendChild(video);
   } else {
@@ -996,7 +1183,7 @@ socket.on("RECEIVE_FILE", (fileMessage) => {
     a.href = URL.createObjectURL(new Blob([fileData]));
     a.download = fileName; // Cho phép tải file
     a.textContent = fileName;
-    a.id = 'fileA'
+    a.id = "fileA";
     li.appendChild(a);
   }
   console.log("final");
@@ -1004,29 +1191,25 @@ socket.on("RECEIVE_FILE", (fileMessage) => {
   document.getElementById("chatMessages").appendChild(li);
 });
 function displayFileName() {
-
-
   // Lấy tên file và cập nhật nội dung của span
   if (fileInput.files.length > 0) {
     fileNameSpan.textContent = input.files[0].name;
   } else {
-    fileNameSpan.textContent = '...';
+    fileNameSpan.textContent = "...";
   }
 }
 
-
-
-videoCall.addEventListener('mouseenter', () => {
+videoCall.addEventListener("mouseenter", () => {
   if (calling) {
-    stopCallingButton.style.display = 'flex';
+    stopCallingButton.style.display = "flex";
   } else {
-    stopCallingButton.style.display = 'none';
+    stopCallingButton.style.display = "none";
   }
-})
-videoCall.addEventListener('mouseleave', () => {
+});
+videoCall.addEventListener("mouseleave", () => {
   if (calling) {
-    stopCallingButton.style.display = 'none';
+    stopCallingButton.style.display = "none";
   } else {
-    stopCallingButton.style.display = 'none';
+    stopCallingButton.style.display = "none";
   }
-})
+});
