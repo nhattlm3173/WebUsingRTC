@@ -464,6 +464,9 @@ VideoCallPage.addEventListener("click", () => {
   StreamDiv.style.display = "none";
   WatchStreamDiv.style.display = "none";
 });
+streamP.addEventListener("click", () => {
+  SelectStreamPage.style.display = "flex";
+})
 streamP.addEventListener("mouseenter", () => {
   SelectStreamPage.style.display = "flex";
   SelectStreamPage.addEventListener("mouseenter", () => {
