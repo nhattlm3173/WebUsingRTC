@@ -482,7 +482,10 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
           PlayStream("remoteStream", remoteStream)
         );
       });
-    } else if (result.dismiss === Swal.DismissReason.cancel || result.dismiss === Swal.DismissReason.backdrop) {
+    } else if (
+      result.dismiss === Swal.DismissReason.cancel ||
+      result.dismiss === Swal.DismissReason.backdrop
+    ) {
       // Người dùng chọn Reject hoặc nhấn ra ngoài
       calling = false;
       socket.emit("REJECT_CALL", {
@@ -505,6 +508,9 @@ VideoCallPage.addEventListener("click", () => {
   if (intervalId) {
     clearInterval(intervalId);
     intervalId = null;
+  }
+  if (callHandler) {
+    peer.off("call", callHandler);
   }
   stopStreaming();
   chatDiv.style.display = "flex";
