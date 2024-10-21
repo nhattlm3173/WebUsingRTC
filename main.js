@@ -180,6 +180,11 @@ function optimizeStreamQuality(peerConnection) {
   navigator.mediaDevices
     .getUserMedia(constraintsLowQuality)
     .then((newStream) => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
+      PlayStream("localStream", newStream);
+      PlayStream("liveStream", newStream);
       mediaStream = newStream;
       const videoTrack = newStream.getVideoTracks()[0];
       const sender = peerConnection
@@ -296,7 +301,7 @@ socket.on("STOP_CALLING", () => {
     intervalId = null;
   }
   if (mediaStream) {
-    // console.log(mediaStream);
+    console.log(mediaStream);
     mediaStream.getTracks().forEach((track) => track.stop());
   }
   if (currentCall) {
@@ -415,6 +420,7 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
       receiverId = callerPeerID;
       OpenStream().then((stream) => {
         mediaStream = stream;
+        // console.log(mediaStream);
         PlayStream("localStream", stream);
         const call = peer.call(callerPeerID, stream);
         currentCall = call;
