@@ -694,25 +694,25 @@ onStreamBtn.addEventListener("click", () => {
         if (arrWatchStream[i].peerID !== userID) {
           const call = peer.call(arrWatchStream[i].peerID, stream);
           // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
-          const peerConnection = call.peerConnection;
+          // const peerConnection = call.peerConnection;
 
-          // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
-          intervalId = setInterval(() => {
-            peerConnection.getStats(null).then((stats) => {
-              stats.forEach((report) => {
-                if (
-                  report.type === "candidate-pair" &&
-                  report.currentRoundTripTime
-                ) {
-                  const rtt = report.currentRoundTripTime;
-                  if (rtt > 0.3) {
-                    // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
-                    optimizeStreamQuality(peerConnection);
-                  }
-                }
-              });
-            });
-          }, 5000);
+          // // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+          // intervalId = setInterval(() => {
+          //   peerConnection.getStats(null).then((stats) => {
+          //     stats.forEach((report) => {
+          //       if (
+          //         report.type === "candidate-pair" &&
+          //         report.currentRoundTripTime
+          //       ) {
+          //         const rtt = report.currentRoundTripTime;
+          //         if (rtt > 0.3) {
+          //           // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+          //           optimizeStreamQuality(peerConnection);
+          //         }
+          //       }
+          //     });
+          //   });
+          // }, 5000);
           // console.log(listCall);
           listCall.push(call);
           call.on("stream", () => {
@@ -728,25 +728,25 @@ onStreamBtn.addEventListener("click", () => {
       const call = peer.call(id, stream);
       listCall.push(call);
       // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
-      const peerConnection = call.peerConnection;
+      // const peerConnection = call.peerConnection;
 
-      // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
-      intervalId = setInterval(() => {
-        peerConnection.getStats(null).then((stats) => {
-          stats.forEach((report) => {
-            if (
-              report.type === "candidate-pair" &&
-              report.currentRoundTripTime
-            ) {
-              const rtt = report.currentRoundTripTime;
-              if (rtt > 0.3) {
-                // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
-                optimizeStreamQuality(peerConnection);
-              }
-            }
-          });
-        });
-      }, 5000);
+      // // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+      // intervalId = setInterval(() => {
+      //   peerConnection.getStats(null).then((stats) => {
+      //     stats.forEach((report) => {
+      //       if (
+      //         report.type === "candidate-pair" &&
+      //         report.currentRoundTripTime
+      //       ) {
+      //         const rtt = report.currentRoundTripTime;
+      //         if (rtt > 0.3) {
+      //           // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+      //           optimizeStreamQuality(peerConnection);
+      //         }
+      //       }
+      //     });
+      //   });
+      // }, 5000);
       console.log(listCall);
       call.on("stream", () => {
         console.log(id);
