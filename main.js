@@ -180,6 +180,7 @@ function optimizeStreamQuality(peerConnection) {
   navigator.mediaDevices
     .getUserMedia(constraintsLowQuality)
     .then((newStream) => {
+      mediaStream = newStream;
       const videoTrack = newStream.getVideoTracks()[0];
       const sender = peerConnection
         .getSenders()
