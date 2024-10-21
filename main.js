@@ -63,25 +63,29 @@ socket.on("ONLINE_LIST", (arrUserInfo) => {
   if (callHandler) {
     peer.off("call", callHandler);
   }
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
   callHandler = (call) => {
     currentCall = call;
     // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
-    const peerConnection = call.peerConnection;
+    // const peerConnection = call.peerConnection;
 
-    // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
-    intervalId = setInterval(() => {
-      peerConnection.getStats(null).then((stats) => {
-        stats.forEach((report) => {
-          if (report.type === "candidate-pair" && report.currentRoundTripTime) {
-            const rtt = report.currentRoundTripTime;
-            if (rtt > 0.3) {
-              // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
-              optimizeStreamQuality(peerConnection);
-            }
-          }
-        });
-      });
-    }, 5000);
+    // // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+    // intervalId = setInterval(() => {
+    //   peerConnection.getStats(null).then((stats) => {
+    //     stats.forEach((report) => {
+    //       if (report.type === "candidate-pair" && report.currentRoundTripTime) {
+    //         const rtt = report.currentRoundTripTime;
+    //         if (rtt > 0.3) {
+    //           // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+    //           optimizeStreamQuality(peerConnection);
+    //         }
+    //       }
+    //     });
+    //   });
+    // }, 5000);
     OpenStream().then((stream) => {
       mediaStream = stream;
       call.answer(stream);
@@ -164,7 +168,22 @@ function PlayStream(idVideoTag, stream) {
     video.play();
   }, 1000);
 }
-
+function optimizeLiveStreamQuality(peerConnection) {
+  const sender = peerConnection
+    .getSenders()
+    .find((s) => s.track.kind === "video");
+  const parameters = sender.getParameters();
+  if (!parameters.encodings) {
+    parameters.encodings = [{}];
+  }
+  parameters.encodings[0].maxBitrate = 300000; // Giới hạn bitrate xuống 300 kbps
+  sender
+    .setParameters(parameters)
+    .then(() => {
+      console.log("Bitrate updated to 300kbps due to network conditions");
+    })
+    .catch((error) => console.error("Error updating bitrate:", error));
+}
 // Hàm để cập nhật cả độ phân giải và bitrate khi mạng yếu
 function optimizeStreamQuality(peerConnection) {
   const constraintsLowQuality = {
@@ -421,7 +440,22 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
       OpenStream().then((stream) => {
         mediaStream = stream;
         // console.log(mediaStream);
-        PlayStream("localStream", stream);
+        // PlayStream("localStream", stream);
+        const video = document.getElementById("localStream");
+        video.srcObject = stream;
+        setTimeout(() => {
+          video.muted = true;
+        }, 1000); // Tắt tiếng của video
+
+        // // Tắt tiếng của tất cả các track âm thanh trong stream
+        // stream.getAudioTracks().forEach((track) => {
+        //   track.enabled = false;
+        // });
+        // video.muted = true;
+        // video.audio = false;
+        setTimeout(() => {
+          video.play();
+        }, 1000);
         const call = peer.call(callerPeerID, stream);
         currentCall = call;
         // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
@@ -565,8 +599,8 @@ watchStreamPage.addEventListener("click", () => {
     // console.log("emoeos");
     // OpenStream().then((stream) => {
     // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
-    const peerConnection = call.peerConnection;
-
+    // const peerConnection = call;
+    // console.log(call);
     call.answer();
     // PlayStream("localStream", stream);
     const receivedStreams = new Set();
@@ -623,22 +657,22 @@ watchStreamPage.addEventListener("click", () => {
             });
             // Bắt đầu phát stream
             // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
-            intervalId = setInterval(() => {
-              peerConnection.getStats(null).then((stats) => {
-                stats.forEach((report) => {
-                  if (
-                    report.type === "candidate-pair" &&
-                    report.currentRoundTripTime
-                  ) {
-                    const rtt = report.currentRoundTripTime;
-                    if (rtt > 0.3) {
-                      // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
-                      optimizeStreamQuality(peerConnection);
-                    }
-                  }
-                });
-              });
-            }, 5000);
+            // intervalId = setInterval(() => {
+            //   peerConnection.peerConnection.getStats(null).then((stats) => {
+            //     stats.forEach((report) => {
+            //       if (
+            //         report.type === "candidate-pair" &&
+            //         report.currentRoundTripTime
+            //       ) {
+            //         const rtt = report.currentRoundTripTime;
+            //         if (rtt > 0.3) {
+            //           // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+            //           optimizeLiveStreamQuality(peerConnection.peerConnection);
+            //         }
+            //       }
+            //     });
+            //   });
+            // }, 5000);
           }
         });
         console.log(li);
