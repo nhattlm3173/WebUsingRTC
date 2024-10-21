@@ -1,4 +1,10 @@
-const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
+const socket = io("https://becoming-innocent-starling.ngrok-free.app", {
+  transports: ["websocket"],
+  extraHeaders: {
+    "ngrok-skip-browser-warning": "true", // Bỏ qua trang cảnh báo
+  },
+}); // Thay bằng URL ngrok của bạn
+// const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
 // const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
@@ -233,7 +239,7 @@ function stopCalling() {
     intervalId = null;
   }
   if (mediaStream) {
-    // console.log(mediaStream);
+    console.log(mediaStream);
     mediaStream.getTracks().forEach((track) => track.stop());
   }
   socket.emit("REQUEST_STOP_CALLING", currentCall.peer);
@@ -466,7 +472,7 @@ VideoCallPage.addEventListener("click", () => {
 });
 streamP.addEventListener("click", () => {
   SelectStreamPage.style.display = "flex";
-})
+});
 streamP.addEventListener("mouseenter", () => {
   SelectStreamPage.style.display = "flex";
   SelectStreamPage.addEventListener("mouseenter", () => {
