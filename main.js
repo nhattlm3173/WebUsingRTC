@@ -512,6 +512,37 @@ VideoCallPage.addEventListener("click", () => {
   if (callHandler) {
     peer.off("call", callHandler);
   }
+  callHandler = (call) => {
+    currentCall = call;
+    // Lấy `peerConnection` từ cuộc gọi để tối ưu hóa chất lượng
+    // const peerConnection = call.peerConnection;
+
+    // // Kiểm tra chất lượng mạng và điều chỉnh lại chất lượng video mỗi 5 giây
+    // intervalId = setInterval(() => {
+    //   peerConnection.getStats(null).then((stats) => {
+    //     stats.forEach((report) => {
+    //       if (report.type === "candidate-pair" && report.currentRoundTripTime) {
+    //         const rtt = report.currentRoundTripTime;
+    //         if (rtt > 0.3) {
+    //           // Nếu RTT vượt quá 300ms, điều chỉnh chất lượng stream
+    //           optimizeStreamQuality(peerConnection);
+    //         }
+    //       }
+    //     });
+    //   });
+    // }, 5000);
+    OpenStream().then((stream) => {
+      mediaStream = stream;
+      console.log(mediaStream);
+      call.answer(stream);
+      PlayStream("localStream", stream);
+      call.on("stream", (remoteStream) => {
+        console.log(remoteStream);
+        return PlayStream("remoteStream", remoteStream);
+      });
+    });
+  };
+  peer.on("call", callHandler);
   stopStreaming();
   chatDiv.style.display = "flex";
   StreamDiv.style.display = "none";
