@@ -1,11 +1,11 @@
-const socket = io("https://becoming-innocent-starling.ngrok-free.app", {
-  transports: ["websocket"],
-  extraHeaders: {
-    "ngrok-skip-browser-warning": "true", // Bỏ qua trang cảnh báo
-  },
-}); // Thay bằng URL ngrok của bạn
+// const socket = io("https://becoming-innocent-starling.ngrok-free.app", {
+//   transports: ["websocket"],
+//   extraHeaders: {
+//     "ngrok-skip-browser-warning": "true", // Bỏ qua trang cảnh báo
+//   },
+// }); // Thay bằng URL ngrok của bạn
 // const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-// const socket = io("http://localhost:3000");
+const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
@@ -482,9 +482,9 @@ socket.on("INCOMING_CALL", ({ callerPeerID, callerName, receiverPeerID }) => {
           PlayStream("remoteStream", remoteStream)
         );
       });
-    } else {
+    } else if (result.dismiss === Swal.DismissReason.cancel || result.dismiss === Swal.DismissReason.backdrop) {
+      // Người dùng chọn Reject hoặc nhấn ra ngoài
       calling = false;
-      // Người dùng chọn Reject
       socket.emit("REJECT_CALL", {
         callerPeerID: callerPeerID,
         username: username,
