@@ -6,11 +6,11 @@ const io = require("socket.io")(process.env.PORT || 3000, {
     credentials: true,
     // Cho phép gửi cookie
   },
-  maxHttpBufferSize: 50 * 1024 * 1024
+  maxHttpBufferSize: 50 * 1024 * 1024,
 });
 const arrUserInfo = [];
 const arrWatchStreamUsers = [];
-const chatHistory = [];
+let chatHistory = [];
 let currentStreamer = null;
 let streamID;
 io.on("connection", (socket) => {
@@ -148,18 +148,23 @@ io.on("connection", (socket) => {
       chatHistory.push(chatMessage); // Lưu tin nhắn vào lịch sử
       io.emit("RECEIVE_CHAT_COMMENT", chatMessage);
       if (streamerSocket) {
-        io.to(streamerSocket.socketID).emit("RECEIVE_CHAT_COMMENT_FOR_STREAMER", chatMessage);
+        io.to(streamerSocket.socketID).emit(
+          "RECEIVE_CHAT_COMMENT_FOR_STREAMER",
+          chatMessage
+        );
       }
     }
   });
   socket.on("DELETE_HISTORY_COMMENT_BY_USERID", (userID) => {
-    chatHistory = chatHistory.filter((message) => message.streamerID !== userID);
+    chatHistory = chatHistory.filter(
+      (message) => message.streamerID !== userID
+    );
   });
   socket.on("SEND_FILE", (data) => {
     const { file, fileName, fileType, userID, receiverId } = data;
     const user = arrUserInfo.find((u) => u.peerID === userID);
     const receiver = arrUserInfo.find((u) => u.peerID === receiverId);
-    console.log("aaa")
+    console.log("aaa");
     if (user && receiver) {
       const fileMessage = {
         username: user.username,
@@ -169,7 +174,5 @@ io.on("connection", (socket) => {
       };
       io.to(receiver.socketID).emit("RECEIVE_FILE", fileMessage);
     }
-
   });
 });
-
