@@ -1,11 +1,11 @@
-// const socket = io("https://becoming-innocent-starling.ngrok-free.app", {
-//   transports: ["websocket"],
-//   extraHeaders: {
-//     "ngrok-skip-browser-warning": "true", // Bỏ qua trang cảnh báo
-//   },
-// }); // Thay bằng URL ngrok của bạn
+const socket = io("https://becoming-innocent-starling.ngrok-free.app", {
+  transports: ["websocket"],
+  extraHeaders: {
+    "ngrok-skip-browser-warning": "true", // Bỏ qua trang cảnh báo
+  },
+}); // Thay bằng URL ngrok của bạn
 // const socket = io("https://web-rtc-d379249ca0bd.herokuapp.com/");
-const socket = io("http://localhost:3000");
+// const socket = io("http://localhost:3000");
 const buttonCall = document.getElementById("btnCall");
 const textRemoteId = document.getElementById("remoteId");
 const buttonRegister = document.getElementById("btnRegister");
