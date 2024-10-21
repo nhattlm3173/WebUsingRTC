@@ -718,17 +718,18 @@ watchStreamPage.addEventListener("click", () => {
         ulVideo.appendChild(li);
       }
     });
+    call.on("close", () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      console.log("Call ended, stopped interval check.");
+    });
     // });
   };
   peer.on("call", callHandler);
   // Khi cuộc gọi kết thúc, hãy dừng setInterval
-  call.on("close", () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-    console.log("Call ended, stopped interval check.");
-  });
+
   // if (currentStreamer) {
   //   socket.emit("USER_VIEW_LIVESTREAM", { peerID: userID });
   //   console.log(currentStreamer);
